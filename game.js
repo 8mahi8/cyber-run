@@ -30,7 +30,8 @@ function step(dt){
  for(const h of hazards)if(h.kind==='moving')h.y=ground-87+Math.sin(elapsed*3.5+h.phase)*27;
  const before=playerRect(),overHole=gaps.some(g=>C.intersectsGap(before,g));
  if(overHole&&runner.support==='ground'&&rescue<=0){hit();rescue=1.0}
- C.physicsStep(runner,dt,runner.x+6,platforms,gaps,duckHeld,jumpQueued,elapsed,rescue);
+ // Screen-space runner stays anchored; the scenery scrolls instead.
+ C.physicsStep(runner,dt,runner.x,platforms,gaps,duckHeld,jumpQueued,elapsed,rescue);
  jumpQueued=false;
  if(runner.bottom>ground+112){hit();runner.bottom=ground;runner.vy=0;runner.jumps=0;runner.support='ground';rescue=1.0;invuln=Math.max(invuln,1.4)}
  const body=playerRect();

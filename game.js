@@ -165,6 +165,36 @@ function draw(){
   const x=((i*257-t*.93)%(W+250)+(W+250))%(W+250)-120;
   ctx.fillRect(x,ground-145,3,140);}}
 
+ // Horizon scanner: preview REAL obstacle silhouettes rather than telling the
+ // player a button sequence. A high-speed runner can otherwise see too little ahead.
+ if(intensity>.30&&runner&&W>=560){
+  const x0=W*.34,span=W*.32,lineY=ground+51,maxFuture=1.5;
+  const origin=runner.x+C.HITBOX_OFFSET_X+C.BODY_W;
+  const upcoming=[...hazards.map(h=>({x:h.x+h.w/2,kind:h.kind})),...gaps.map(g=>({x:g.x+g.w/2,kind:'gap'}))]
+   .map(h=>({...h,lead:C.timeToTravel(elapsed,Math.max(0,h.x-origin))}))
+   .filter(h=>h.lead>.32&&h.lead<maxFuture).sort((a,b)=>a.lead-b.lead).slice(0,5);
+  ctx.save();ctx.globalAlpha=.42;ctx.strokeStyle='#4be4da';ctx.lineWidth=1.3;
+  ctx.beginPath();ctx.moveTo(x0,lineY);ctx.lineTo(x0+span,lineY);ctx.stroke();
+  ctx.fillStyle='#a6e6e9';ctx.font='10px system-ui';ctx.textAlign='left';ctx.fillText('SCAN',x0,lineY-13);
+  ctx.globalAlpha=.82;
+  for(const h of upcoming){
+   const x=x0+span*h.lead/maxFuture;
+   if(h.kind==='duck-gate'){
+    ctx.fillStyle='#f196f5';ctx.fillRect(x-5,lineY-12,10,9);
+    ctx.fillStyle='#86ffe0';ctx.fillRect(x-5,lineY-1,10,2);
+   }else if(h.kind==='gap'){
+    ctx.fillStyle='#ff839e';ctx.fillRect(x-7,lineY-1,5,3);ctx.fillRect(x+2,lineY-1,5,3);
+   }else if(h.kind==='bar'||h.kind==='platform-bar'){
+    ctx.fillStyle='#f38cdd';ctx.fillRect(x-5,lineY-10,10,4);
+   }else if(h.kind==='moving'){
+    ctx.fillStyle='#ffb477';ctx.fillRect(x-4,lineY-8,8,8);
+   }else{
+    ctx.fillStyle='#ffb477';ctx.fillRect(x-5,lineY-7,10,7);
+   }
+  }
+  ctx.restore();
+ }
+
  for(const g of gaps){ctx.fillStyle='#050a19';ctx.fillRect(g.x,ground-1,g.w,H-ground+2);ctx.fillStyle='#f77c9c';ctx.fillRect(g.x-4,ground-2,4,15);ctx.fillRect(g.x+g.w,ground-2,4,15)}
  // Platforms draw behind obstacles. They only collide with the player on descent.
  for(const pad of pads){ctx.save();ctx.shadowBlur=14;ctx.shadowColor='#ffe36d';
@@ -179,7 +209,24 @@ function draw(){
  for(const h of hazards){
   if(h.x+h.w<0||h.x>W+100)continue;
   ctx.save();ctx.shadowBlur=7;
-  if(h.kind==='bar'||h.kind==='platform-bar'){
+  if(h.kind==='duck-gate'){
+   // FULL silhouette = FULL collision region, no invisible overhead wall.
+   // The ground-level opening is deliberately large enough for crouching only.
+   ctx.shadowColor='#f079ff';ctx.shadowBlur=12;
+   ctx.fillStyle='#39254e';ctx.fillRect(h.x,h.y,h.w,h.h);
+   ctx.fillStyle='#693b83';ctx.fillRect(h.x+7,h.y+6,h.w-14,h.h-14);
+   ctx.fillStyle='#c581e6';ctx.fillRect(h.x,h.y,h.w,6);
+   for(let k=h.y+15;k<h.y+h.h-17;k+=26){
+    ctx.fillStyle='#b67bce66';ctx.fillRect(h.x+11,k,h.w-22,2);
+   }
+   ctx.fillStyle='#f2a4fc';ctx.fillRect(h.x,h.y+h.h-8,h.w,8);
+   ctx.shadowBlur=0;
+   // Only the cyan-lit low opening is safe; never draw an apparent top shortcut.
+   ctx.strokeStyle='#81ffe5';ctx.lineWidth=3;ctx.beginPath();
+   ctx.moveTo(h.x,h.y+h.h+3);ctx.lineTo(h.x+h.w,h.y+h.h+3);ctx.stroke();
+   ctx.fillStyle='#bbffe6';ctx.font='bold 12px system-ui';ctx.textAlign='center';
+   ctx.fillText('↓',h.x+h.w/2,h.y+h.h-15);
+  }else if(h.kind==='bar'||h.kind==='platform-bar'){
    ctx.shadowColor='#f75fbf';ctx.fillStyle='#a92d86';ctx.fillRect(h.x,h.y,h.w,h.h);
    ctx.fillStyle='#ff99dc';ctx.fillRect(h.x+2,h.y+1,h.w-4,5);
    ctx.fillStyle='#fbe1fb';for(let k=9;k<h.w-4;k+=18)ctx.fillRect(h.x+k,h.y+11,8,3);

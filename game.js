@@ -170,7 +170,9 @@ function draw(){
  if(intensity>.30&&runner&&W>=560){
   const x0=W*.34,span=W*.32,lineY=ground+51,maxFuture=1.5;
   const origin=runner.x+C.HITBOX_OFFSET_X+C.BODY_W;
-  const upcoming=[...hazards.map(h=>({x:h.x+h.w/2,kind:h.kind})),...gaps.map(g=>({x:g.x+g.w/2,kind:'gap'}))]
+  const upcoming=[...hazards.map(h=>({x:h.x+h.w/2,kind:h.kind})),...gaps.map(g=>({x:g.x+g.w/2,kind:'gap'})),
+   ...pads.filter(p=>p.kind==='airboost').map(p=>({x:p.x+p.w/2,kind:'airboost'})),
+   ...platforms.filter(p=>p.kind==='fragile').map(p=>({x:p.x+p.w/2,kind:'fragile'}))]
    .map(h=>({...h,lead:C.timeToTravel(elapsed,Math.max(0,h.x-origin))}))
    .filter(h=>h.lead>.32&&h.lead<maxFuture).sort((a,b)=>a.lead-b.lead).slice(0,5);
   ctx.save();ctx.globalAlpha=.42;ctx.strokeStyle='#4be4da';ctx.lineWidth=1.3;
@@ -179,7 +181,12 @@ function draw(){
   ctx.globalAlpha=.82;
   for(const h of upcoming){
    const x=x0+span*h.lead/maxFuture;
-   if(h.kind==='duck-gate'){
+   if(h.kind==='airboost'){
+    ctx.strokeStyle='#79ffe4';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,lineY-5,6,0,Math.PI*2);ctx.stroke();
+   }else if(h.kind==='fragile'){
+    ctx.fillStyle='#ffb477';ctx.fillRect(x-8,lineY-6,16,3);
+    ctx.fillStyle='#ffe6a1';ctx.fillRect(x,lineY-4,2,5);
+   }else if(h.kind==='duck-gate'){
     ctx.fillStyle='#f196f5';ctx.fillRect(x-5,lineY-12,10,9);
     ctx.fillStyle='#86ffe0';ctx.fillRect(x-5,lineY-1,10,2);
    }else if(h.kind==='gap'){

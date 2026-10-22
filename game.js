@@ -170,7 +170,9 @@ function draw(){
  if(intensity>.30&&runner&&W>=560){
   const x0=W*.34,span=W*.32,lineY=ground+51,maxFuture=1.5;
   const origin=runner.x+C.HITBOX_OFFSET_X+C.BODY_W;
-  const upcoming=[...hazards.map(h=>({x:h.x+h.w/2,kind:h.kind})),...gaps.map(g=>({x:g.x+g.w/2,kind:'gap'}))]
+  const upcoming=[...hazards.map(h=>({x:h.x+h.w/2,kind:h.kind})),...gaps.map(g=>({x:g.x+g.w/2,kind:'gap'})),
+   ...pads.filter(p=>p.kind==='airboost').map(p=>({x:p.x+p.w/2,kind:'airboost'})),
+   ...platforms.filter(p=>p.kind==='fragile').map(p=>({x:p.x+p.w/2,kind:'fragile'}))]
    .map(h=>({...h,lead:C.timeToTravel(elapsed,Math.max(0,h.x-origin))}))
    .filter(h=>h.lead>.32&&h.lead<maxFuture).sort((a,b)=>a.lead-b.lead).slice(0,5);
   ctx.save();ctx.globalAlpha=.42;ctx.strokeStyle='#4be4da';ctx.lineWidth=1.3;
@@ -179,7 +181,12 @@ function draw(){
   ctx.globalAlpha=.82;
   for(const h of upcoming){
    const x=x0+span*h.lead/maxFuture;
-   if(h.kind==='duck-gate'){
+   if(h.kind==='airboost'){
+    ctx.strokeStyle='#79ffe4';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,lineY-5,6,0,Math.PI*2);ctx.stroke();
+   }else if(h.kind==='fragile'){
+    ctx.fillStyle='#ffb477';ctx.fillRect(x-8,lineY-6,16,3);
+    ctx.fillStyle='#ffe6a1';ctx.fillRect(x,lineY-4,2,5);
+   }else if(h.kind==='duck-gate'){
     ctx.fillStyle='#f196f5';ctx.fillRect(x-5,lineY-12,10,9);
     ctx.fillStyle='#86ffe0';ctx.fillRect(x-5,lineY-1,10,2);
    }else if(h.kind==='gap'){
@@ -197,14 +204,43 @@ function draw(){
 
  for(const g of gaps){ctx.fillStyle='#050a19';ctx.fillRect(g.x,ground-1,g.w,H-ground+2);ctx.fillStyle='#f77c9c';ctx.fillRect(g.x-4,ground-2,4,15);ctx.fillRect(g.x+g.w,ground-2,4,15)}
  // Platforms draw behind obstacles. They only collide with the player on descent.
- for(const pad of pads){ctx.save();ctx.shadowBlur=14;ctx.shadowColor='#ffe36d';
- ctx.fillStyle='#a47729';ctx.fillRect(pad.x,ground-10,pad.w,10);
- ctx.fillStyle='#ffe06a';ctx.fillRect(pad.x,ground-13,pad.w,6);
- ctx.fillStyle='#fff1ba';for(let i=5;i<pad.w-4;i+=11)ctx.fillRect(pad.x+i,ground-11,5,3);
- ctx.restore()}
- for(const p of platforms){ctx.save();ctx.shadowBlur=11;ctx.shadowColor='#ae8eff';ctx.fillStyle='#4b477f';ctx.fillRect(p.x,p.y,p.w,11);
-  ctx.fillStyle='#d5adff';ctx.fillRect(p.x,p.y,p.w,4);
-  ctx.fillStyle='#8974e0';for(let k=13;k<p.w-7;k+=24)ctx.fillRect(p.x+k,p.y+5,12,2);ctx.restore()}
+ for(const pad of pads){
+  ctx.save();
+  if(pad.kind==='airboost'){
+   // The full hitbox is visible: a cyan jump ring suspended in the air.
+   const used=!!runner?.airBoosts?.[pad.id],cx=pad.x+pad.w/2,cy=pad.y+(pad.h||34)/2;
+   ctx.globalAlpha=used?.25:1;ctx.shadowBlur=18;ctx.shadowColor='#7effe5';
+   ctx.strokeStyle=used?'#698b86':'#7effe5';ctx.lineWidth=5;
+   ctx.beginPath();ctx.ellipse(cx,cy,pad.w/2-4,(pad.h||34)/2-2,0,0,Math.PI*2);ctx.stroke();
+   ctx.fillStyle='#d7fff4';ctx.font='bold 15px system-ui';ctx.textAlign='center';
+   ctx.fillText('↑',cx,cy+6);
+  }else{
+   ctx.shadowBlur=14;ctx.shadowColor='#ffe36d';
+   ctx.fillStyle='#a47729';ctx.fillRect(pad.x,ground-10,pad.w,10);
+   ctx.fillStyle='#ffe06a';ctx.fillRect(pad.x,ground-13,pad.w,6);
+   ctx.fillStyle='#fff1ba';for(let i=5;i<pad.w-4;i+=11)ctx.fillRect(pad.x+i,ground-11,5,3);
+  }
+  ctx.restore();
+ }
+ for(const p of platforms){
+  ctx.save();
+  if(p.kind==='fragile'){
+   const touched=runner?.fragileTimes?.[p.id],remaining=touched===undefined?1:Math.max(0,1-(elapsed-touched)/C.FRAGILE_HOLD);
+   ctx.globalAlpha=touched===undefined?1:Math.max(.22,remaining);
+   ctx.shadowBlur=11;ctx.shadowColor='#ff9f6b';
+   ctx.fillStyle='#6a4039';ctx.fillRect(p.x,p.y,p.w,11);
+   ctx.fillStyle='#ffb36e';ctx.fillRect(p.x,p.y,p.w,4);
+   ctx.strokeStyle='#ffe4a3';ctx.lineWidth=2;ctx.beginPath();
+   for(let k=15;k<p.w-10;k+=27){ctx.moveTo(p.x+k,p.y+3);ctx.lineTo(p.x+k+7,p.y+9);ctx.lineTo(p.x+k+15,p.y+4)}
+   ctx.stroke();
+   ctx.globalAlpha=1;
+  }else{
+   ctx.shadowBlur=11;ctx.shadowColor='#ae8eff';ctx.fillStyle='#4b477f';ctx.fillRect(p.x,p.y,p.w,11);
+   ctx.fillStyle='#d5adff';ctx.fillRect(p.x,p.y,p.w,4);
+   ctx.fillStyle='#8974e0';for(let k=13;k<p.w-7;k+=24)ctx.fillRect(p.x+k,p.y+5,12,2);
+  }
+  ctx.restore();
+ }
  // Distinct obstacle silhouettes with their complete collision rectangle visible.
  for(const h of hazards){
   if(h.x+h.w<0||h.x>W+100)continue;

@@ -13,7 +13,7 @@ function makeSegment(x,time,rng,health,worldWidth){
  const obstacle=(kind,w,h,y)=>hazards.push({x:center-w/2,y,w,h,kind,phase:rng()*Math.PI*2});
  if(type==='low')obstacle('low',32,32,GROUND-32);
  if(type==='bar')obstacle('bar',80,32,GROUND-65);
- if(type==='tall')obstacle('tall',37,74,GROUND-74);
+ if(type==='tall')obstacle('tall',37,128,GROUND-128);
  if(type==='moving')obstacle('moving',32,28,GROUND-89);
  if(type==='gap'){
    // Crossing takes < .19 s at all permitted speeds. A first jump remains sufficient.

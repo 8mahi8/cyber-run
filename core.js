@@ -55,6 +55,13 @@ const PATTERNS=[
   script:[[.19,'jump'],[1.37,'duck-on'],[1.77,'duck-off'],[1.92,'jump']],
   platforms:[[.46,1.05,80],[1.12,1.88,45]],
   hazards:[[.80,'low'],[1.60,'platform-bar',1],[2.23,'low']]},
+ // Higher-distance mastery bursts: several alternating commands in one continuous flow.
+ {name:'rhythm-five',theme:'RHYTHM BURST',duration:3.52,weight:4.8,minTime:12,
+  script:[[.18,'jump'],[.90,'duck-on'],[1.23,'duck-off'],[1.36,'jump'],[2.07,'duck-on'],[2.40,'duck-off'],[2.55,'jump']],
+  hazards:[[.43,'low'],[1.07,'bar'],[1.61,'low'],[2.25,'bar'],[2.80,'low']]},
+ {name:'overdrive-rhythm',theme:'RHYTHM BURST',duration:4.56,weight:6.0,minTime:40,
+  script:[[.18,'jump'],[.90,'duck-on'],[1.23,'duck-off'],[1.36,'jump'],[2.07,'duck-on'],[2.40,'duck-off'],[2.55,'jump'],[3.27,'duck-on'],[3.60,'duck-off'],[3.73,'jump']],
+  hazards:[[.43,'low'],[1.07,'bar'],[1.61,'low'],[2.25,'bar'],[2.80,'low'],[3.45,'bar'],[4.00,'low']]},
  {name:'breather',theme:'RECOVERY',duration:1.12,weight:.15,script:[],hazards:[]},
 ];
 function speedAt(seconds){return Math.min(MAX_SPEED,BASE_SPEED+Math.max(0,seconds)*7.5)}

@@ -162,7 +162,7 @@ function buildPattern(x,seconds,speed,pattern,rng,riff=0){
   const rising=Math.min(t,Math.max(0,untilCap));
   return initial*rising+3.75*rising*rising+MAX_SPEED*Math.max(0,t-rising);
  };
- const platforms=(pattern.platforms||[]).map(([a,b,height,kind],i)=>({id:pattern.name+':'+i,x:x+distance(a),w:distance(b-a),y:GROUND-height,kind:kind||'one-way'}));
+ const platforms=(pattern.platforms||[]).map(([a,b,height,kind],i)=>({id:pattern.name+':'+(kind==='fragile'?Math.round(seconds*1000)+':':'')+i,x:x+distance(a),w:distance(b-a),y:GROUND-height,kind:kind||'one-way'}));
  // Micro-riffs change the relative timing of existing hazards, not the move script.
  // Variants must be independently certified against the real runner physics.
  const hazards=[];let hazardIndex=0;
@@ -175,7 +175,7 @@ function buildPattern(x,seconds,speed,pattern,rng,riff=0){
    'platform-bar':[65,28,GROUND-(pattern.platforms?.[extra]?.[2]||80)-62]};
   const [w,h,y]=sz[kind];hazards.push({x:x+distance(at+timingShift)-w/2,y,w,h,kind,phase:0});
  }
- const pads=(pattern.pads||[]).map(([at,width,height,kind],i)=>({id:pattern.name+':pad:'+i,x:x+distance(at)-width/2,w:width,y:kind==='airboost'?GROUND-height:GROUND,h:kind==='airboost'?34:10,kind:kind||'spring'}));
+ const pads=(pattern.pads||[]).map(([at,width,height,kind],i)=>({id:pattern.name+':'+Math.round(seconds*1000)+':pad:'+i,x:x+distance(at)-width/2,w:width,y:kind==='airboost'?GROUND-height:GROUND,h:kind==='airboost'?34:10,kind:kind||'spring'}));
  const gaps=(pattern.gaps||[]).map(([at,width,unit])=>{const w=unit==='seconds'?distance(at+width/2)-distance(at-width/2):width;return{x:x+distance(at)-w/2,w}});
  return {type:pattern.name,theme:pattern.theme,x,length:distance(duration),seconds,speed,hazards,gaps,platforms,pads,pickups:[],script:pattern.script,pattern,riff};
 }

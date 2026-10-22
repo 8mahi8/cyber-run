@@ -4,7 +4,7 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;root.CyberRunCore=api})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
 const GROUND=370,GRAVITY=1900,FIRST_JUMP=690,SECOND_JUMP=640,SPRING_JUMP=930,BASE_SPEED=400,MAX_SPEED=1150;
-const BODY_W=21,STAND_H=48,DUCK_H=27,MIN_SECOND_JUMP=.11,DT=1/120;
+const BODY_W=21,HITBOX_OFFSET_X=6,STAND_H=48,DUCK_H=27,MIN_SECOND_JUMP=.11,DT=1/120;
 const PATTERNS=[
  // 'script' records the intended action sequence, not the only valid route.
  {name:'street-pulse',theme:'GROUND FLOW',duration:2.20,weight:4,script:[[.22,'jump'],[1.04,'jump']],hazards:[[.48,'low'],[1.31,'low']]},
@@ -17,7 +17,7 @@ const PATTERNS=[
  {name:'fall-and-hop',theme:'SKY FLOW',duration:2.53,weight:3.2,minTime:6,script:[[.18,'jump'],[1.47,'jump']],platforms:[[.45,1.10,77]],hazards:[[.78,'low'],[1.79,'low']]},
  {name:'tunnel-to-sky',theme:'SKY FLOW',duration:2.67,weight:3,minTime:8,script:[[.23,'duck-on'],[.60,'duck-off'],[.79,'jump']],platforms:[[1.00,1.91,81]],hazards:[[.44,'bar'],[1.41,'low'],[1.70,'low']]},
  {name:'sky-gap',theme:'SKY FLOW',duration:2.30,weight:2,minTime:15,script:[[.20,'jump']],platforms:[[.48,1.43,80]],hazards:[[.83,'low']],gaps:[[1.06,58]]},
- {name:'rhythm-three',theme:'GROUND FLOW',duration:2.90,weight:3,minTime:10,script:[[.19,'jump'],[.99,'duck-on'],[1.34,'duck-off'],[1.47,'jump']],hazards:[[.44,'low'],[1.15,'bar'],[1.75,'low']]},
+ {name:'rhythm-three',theme:'GROUND FLOW',duration:2.90,weight:3,minTime:10,script:[[.19,'jump'],[.93,'duck-on'],[1.34,'duck-off'],[1.47,'jump']],hazards:[[.44,'low'],[1.15,'bar'],[1.75,'low']]},
  {name:'sky-low-high',theme:'SKY FLOW',duration:2.65,weight:2.5,minTime:17,script:[[.20,'jump'],[1.47,'jump']],platforms:[[.49,1.13,82]],hazards:[[.87,'low'],[1.83,'low']]},
 
  // Dense, action-distinct motifs. Scripts are witnessed and rejected at build time if unsafe.
@@ -101,17 +101,17 @@ function physicsStep(p,dt,x,platforms,gaps,duckHeld,jumpRequested,time,rescue=0,
  if(p.vy>=0){
   for(const platform of platforms){
    // Only collide when descending across the upper face: jump from underneath passes through.
-   if(prevBottom<=platform.y+.001&&p.bottom>=platform.y&&x+BODY_W*.86>platform.x&&x+BODY_W*.14<platform.x+platform.w){
+   if(prevBottom<=platform.y+.001&&p.bottom>=platform.y&&x+HITBOX_OFFSET_X+BODY_W*.86>platform.x&&x+HITBOX_OFFSET_X+BODY_W*.14<platform.x+platform.w){
     if(!landing||platform.y<landing.y)landing={y:platform.y,id:platform.id};
    }
   }
   if(prevBottom<=GROUND+.001&&p.bottom>=GROUND){
-   const feet=rectAt(x,p.bottom,p.duck);
+   const feet=rectAt(x+HITBOX_OFFSET_X,p.bottom,p.duck);
    if(rescue>0||!gaps.some(g=>intersectsGap(feet,g))){if(!landing||GROUND<landing.y)landing={y:GROUND,id:'ground'}}
   }
  }
  if(landing){
-  const spring=landing.id==='ground'&&pads.find(pad=>x+BODY_W*.86>pad.x&&x+BODY_W*.14<pad.x+pad.w);
+  const spring=landing.id==='ground'&&pads.find(pad=>x+HITBOX_OFFSET_X+BODY_W*.86>pad.x&&x+HITBOX_OFFSET_X+BODY_W*.14<pad.x+pad.w);
   if(spring){p.bottom=GROUND;p.vy=-SPRING_JUMP;p.jumps=1;p.support=null;p.coyote=0;p.duck=false;p.jumpBuffer=0}
   else {p.bottom=landing.y;p.vy=0;p.jumps=0;p.support=landing.id;p.coyote=.075;p.duck=!!duckHeld;p.jumpBuffer=0}
  }
@@ -158,7 +158,7 @@ function replayPattern(segment,opts={}){
   covered+=speedAt(initialTime+time)*dt;
   const worldX=x0+covered;
   physicsStep(runner,dt,worldX,segment.platforms,segment.gaps,duck,request,initialTime+time,0,segment.pads);
-  const rect=rectAt(worldX,runner.bottom,runner.duck);
+  const rect=rectAt(worldX+HITBOX_OFFSET_X,runner.bottom,runner.duck);
   if(runner.bottom>GROUND+10)return {ok:false,reason:'fell',time,worldX};
   if(segment.hazards.some(h=>overlap(rect,hazardAt(h,initialTime+time))))return {ok:false,reason:'hazard',time,worldX};
   if(opts.trace)route.push({time,worldX,bottom:runner.bottom,jumps:runner.jumps,support:runner.support,duck:runner.duck});
@@ -192,7 +192,8 @@ function makeSegment(x,seconds,rng,hp,recent={}){
  for(const {p,weight} of weighted){needle-=weight;if(needle<0){pattern=p;break}}
  // Pre-certified micro-riffs keep the action grammar intact while varying actual
  // obstacle timing. rhythm-three has less clearance and permits only safe riffs.
- const approvedRiffs=pattern.name==='rhythm-three'?[0,2]:[0,1,2,3];
+ const approvedRiffs=pattern.name==='rhythm-five'?[0,2]:
+  pattern.name==='aerial-surge'?[0,1]:[0,1,2,3];
  const riff=approvedRiffs[Math.floor(rng()*approvedRiffs.length)];
  const segment=buildPattern(x,seconds,speed,pattern,rng,riff);
  // Healing is deliberately rare, random, and never spawns at full HP. No score pickups.
@@ -200,5 +201,5 @@ function makeSegment(x,seconds,rng,hp,recent={}){
  return segment;
 }
 return {GROUND,GRAVITY,FIRST_JUMP,SECOND_JUMP,SPRING_JUMP,BASE_SPEED,MAX_SPEED,BODY_W,STAND_H,DUCK_H,DT,MIN_SECOND_JUMP,PATTERNS,
- speedAt,timeToTravel,randomizer,overlap,intersectsGap,rectAt,hazardAt,makeRunner,isSupported,physicsStep,buildPattern,replayPattern,verifyPattern,makeSegment};
+ speedAt,timeToTravel,randomizer,overlap,intersectsGap,rectAt,hazardAt,makeRunner,isSupported,physicsStep,buildPattern,replayPattern,verifyPattern,makeSegment,HITBOX_OFFSET_X};
 });

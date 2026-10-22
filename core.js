@@ -196,7 +196,7 @@ function trajectoryTrace(events,duration,seconds,platforms=[]){
 }
 function trajectoryComposition(seconds,rng){
  const moves=['vault','slide','double','gap','slide-vault','vault-slide','sky-line','sky-stair'];
- const pressure=Math.min(1,seconds/100),count=4+Math.floor(rng()*3)+Math.floor(pressure*2);
+ const pressure=Math.min(1,seconds/100),count=4+Math.floor(rng()*2)+Math.floor(pressure);
  // Shorter links between distinct actions, not artificially faster jump physics.
  const bridge=seconds>=55?.15:seconds>=20?.055:0;
  const script=[],needs=[];let cursor=.18,last='',skyIndex=0,stairCount=0,skyFloorCount=0;

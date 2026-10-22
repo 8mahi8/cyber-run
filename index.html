@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#070d20">
-<title>CYBER RUN — Prototype v0.3</title>
+<title>CYBER RUN — Prototype v0.4</title>
 <style>
 :root{color-scheme:dark;--cyan:#65eeef;--purple:#c185ff;--cream:#f2faff}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -12,7 +12,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#070d20;col
 canvas{width:100vw;height:100dvh;display:block;touch-action:none}
 #hud{position:fixed;top:max(9px,env(safe-area-inset-top));left:max(18px,env(safe-area-inset-left));right:max(18px,env(safe-area-inset-right));display:flex;justify-content:space-between;align-items:flex-start;z-index:3;pointer-events:none;gap:10px;text-shadow:0 2px 8px #020817}
 .metric{min-width:100px;display:flex;flex-direction:column}.metric.right{text-align:right}.metric span{font-size:11px;letter-spacing:.18em;color:#a6c3dd;font-weight:800}.metric strong{font-variant-numeric:tabular-nums;font-size:clamp(20px,3.8vw,32px);line-height:1.15;color:#fff}.metric small{font-size:11px;color:#98c9e0}.center-hud{text-align:center}#hearts{font-size:clamp(16px,3vw,24px);color:#ff7899;white-space:nowrap;letter-spacing:.1em}#region{font-size:10px;letter-spacing:.16em;color:#8be5f5;font-weight:700}
-#controls{position:fixed;inset:auto max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));display:flex;justify-content:space-between;pointer-events:none;z-index:4}.control{pointer-events:auto;touch-action:none;border:2px solid #76d4fa;border-radius:20px;width:clamp(100px,20vw,152px);height:clamp(58px,16vh,84px);font-size:clamp(15px,2.5vw,22px);font-weight:900;color:white;box-shadow:0 6px 20px #02081988;background:#184269cf}.control.jump{background:#126cafdd;border-color:#7bfcf2}.control:active,.control.pressed{transform:scale(.96);filter:brightness(1.3)}#pause{position:fixed;z-index:4;top:65px;right:max(18px,env(safe-area-inset-right));background:#162c4dce;color:white;border:1px solid #58859a;border-radius:9px;padding:6px 12px;font-size:18px;touch-action:manipulation}
+#controls{position:fixed;inset:auto max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));display:flex;justify-content:space-between;pointer-events:none;z-index:4}.control{pointer-events:auto;touch-action:none;border:2px solid #76d4fa;border-radius:20px;width:clamp(100px,20vw,152px);height:clamp(58px,16vh,84px);font-size:clamp(15px,2.5vw,22px);font-weight:900;color:white;box-shadow:0 6px 20px #02081988;background:#184269ec}.control.jump{background:#126cafee;border-color:#7bfcf2}.control:active,.control.pressed{transform:scale(.96);filter:brightness(1.3)}#pause{position:fixed;z-index:4;top:65px;right:max(18px,env(safe-area-inset-right));background:#162c4dce;color:white;border:1px solid #58859a;border-radius:9px;padding:6px 12px;font-size:18px;touch-action:manipulation}
 #overlay{position:fixed;inset:0;display:grid;place-items:center;background:#020818b9;z-index:6;padding:15px}#overlay.hidden{display:none}#panel{width:min(430px,90vw);max-height:95dvh;overflow:auto;text-align:center;border:1px solid #5dd4ee;border-radius:24px;padding:clamp(20px,4vh,32px);background:linear-gradient(135deg,#10274be8,#151631ed);box-shadow:0 0 55px #0bc5e622}h1{margin:3px 0 12px;font-size:clamp(34px,6vw,56px);letter-spacing:.06em;font-weight:950}h1 em{color:#64eded;font-style:normal}.eyebrow{font-size:10px;letter-spacing:.2em;color:#9ab8d3;font-weight:700}#message{font-size:16px;line-height:1.5}.hint{font-size:12px;line-height:1.8;color:#b6cbe2}#primary{border:0;border-radius:14px;background:linear-gradient(100deg,#0dc6d4,#397cff);padding:13px 32px;margin:9px 0;color:white;font-weight:900;font-size:18px;box-shadow:0 6px 20px #0c63aa66}.sub{font-size:10px;color:#9cb2c8;margin-top:12px}
 @media (max-height:330px){#pause{top:38px}#region,.metric small{display:none}#panel{padding:12px}.hint{margin:6px 0}.control{height:52px}h1{font-size:28px}}
 
@@ -28,74 +28,161 @@ canvas{width:100vw;height:100dvh;display:block;touch-action:none}
 <div id="controls"><button id="duck" class="control duck" aria-label="しゃがむ">しゃがむ</button><button id="jump" class="control jump" aria-label="ジャンプ">ジャンプ</button></div>
 <button id="pause" aria-label="一時停止">Ⅱ</button>
 <div id="overlay" role="dialog" aria-modal="true"><section id="panel">
-  <div class="eyebrow">ARCADE / PROTOTYPE 0.3</div>
+  <div class="eyebrow">ARCADE / PROTOTYPE 0.4</div>
   <h1>CYBER <em>RUN</em></h1>
-  <p id="message">走るほど加速する街を駆け抜けよう。</p>
+  <p id="message">高密度の障害物を避けて、最高記録を塗り替えろ。</p>
   <p class="hint">ジャンプ：右ボタンを2回までタップ<br>しゃがみ：左ボタンを長押し<br>キーボード：↑ / Space、↓</p>
   <button id="primary">RUN START</button>
   <div class="sub">ランキング未実装 ／ 記録はこの端末だけに保存</div>
 </section></div>
 <script>
-/* CYBER RUN: pure rules and reproducible pattern generator (no browser globals). */
+/* CYBER RUN v0.4. Pure runner physics + reachable high-density pattern generation. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;root.CyberRunCore=api})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
-const GROUND=370,GRAVITY=1600,FIRST_JUMP=590,SECOND_JUMP=550,MAX_SPEED=570,BASE_SPEED=260;
-function speedAt(seconds){return Math.min(MAX_SPEED,BASE_SPEED+Math.max(0,seconds)*2.8)}
+const GROUND=370,GRAVITY=1900,FIRST_JUMP=690,SECOND_JUMP=640,BASE_SPEED=335,MAX_SPEED=790;
+const BODY_W=21, STAND_H=48, DUCK_H=27, MIN_SECOND_JUMP=.11;
+const PATTERNS=[
+ {name:'low',events:[[.51,'low']],duration:1.02,weight:6},
+ {name:'bar',events:[[.48,'bar']],duration:.98,weight:5},
+ {name:'gap',events:[[.51,'gap']],duration:1.04,weight:1.1,minTime:12},
+ {name:'tall',events:[[.82,'tall']],duration:1.53,weight:3,minTime:16},
+ {name:'moving',events:[[.57,'moving']],duration:1.15,weight:2.3,minTime:18},
+ {name:'low-bar',events:[[.42,'low'],[1.12,'bar']],duration:1.56,weight:5},
+ {name:'bar-low',events:[[.40,'bar'],[1.04,'low']],duration:1.50,weight:5},
+ {name:'low-low',events:[[.42,'low'],[.81,'low']],duration:1.28,weight:4},
+ {name:'bar-bar',events:[[.39,'bar'],[.83,'bar']],duration:1.29,weight:3},
+ {name:'bar-moving',events:[[.40,'bar'],[1.08,'moving']],duration:1.59,weight:3,minTime:22},
+ {name:'moving-low',events:[[.43,'moving'],[1.10,'low']],duration:1.61,weight:2.5,minTime:22},
+ {name:'bar-low-bar',events:[[.39,'bar'],[.96,'low'],[1.60,'bar']],duration:2.08,weight:4,minTime:16},
+ {name:'low-bar-low',events:[[.44,'low'],[1.14,'bar'],[1.78,'low']],duration:2.28,weight:4,minTime:25},
+ {name:'low-gap',events:[[.41,'low'],[1.08,'gap']],duration:1.57,weight:1.6,minTime:27},
+ {name:'gap-bar',events:[[.46,'gap'],[1.09,'bar']],duration:1.59,weight:1.3,minTime:27},
+ {name:'coin-wave',events:[],duration:.78,weight:1.1}
+];
+function speedAt(seconds){return Math.min(MAX_SPEED,BASE_SPEED+Math.max(0,seconds)*7.5)}
 function randomizer(seed){let n=seed>>>0;return function(){n=(Math.imul(n,1664525)+1013904223)>>>0;return n/4294967296}}
-function choose(rng,list){return list[Math.min(list.length-1,Math.floor(rng()*list.length))]}
-function makeSegment(x,seconds,rng,hp){
- const speed=speedAt(seconds),difficulty=seconds<28?0:seconds<70?1:2;
- const types=[
-  ['empty','low','bar','empty','low','bar','coins'],
-  ['low','bar','tall','empty','low','bar','gap','moving','coins','low-bar'],
-  ['low','bar','tall','moving','gap','low-bar','bar-low','coins','empty','tall','moving']
- ];
- const type=choose(rng,types[difficulty]);
- const combo=type==='low-bar'||type==='bar-low';
- // Time spacing, not fixed pixels: even maximum-speed transitions allow a full jump cycle.
- const length=Math.max(combo?610:360,speed*((combo?2.5:1.48)+rng()*.18));
- const hazards=[],gaps=[],pickups=[];
- const obstacle=(kind,cx)=>{
-  const specs={low:[33,34,GROUND-34],bar:[82,30,GROUND-65],tall:[39,128,GROUND-128],moving:[34,28,GROUND-89]};
-  const [w,h,y]=specs[kind];hazards.push({x:cx-w/2,y,w,h,kind,phase:rng()*Math.PI*2});
- };
- const center=x+length*.5;
- if(['low','bar','tall','moving'].includes(type))obstacle(type,center);
- if(combo){obstacle(type==='low-bar'?'low':'bar',x+length*.28);obstacle(type==='low-bar'?'bar':'low',x+length*.73)}
- if(type==='gap'){
-  const width=Math.min(66,Math.max(38,speed*.16));gaps.push({x:center-width/2,w:width});
- }
- const count=type==='coins'?9:5;
- for(let i=0;i<count;i++){
-  const cx=x+length*(.15+.7*(i/(count-1)));
-  let cy=GROUND-65;
-  if(type==='bar')cy=GROUND-15;
-  if(type==='tall')cy=GROUND-170;
-  if(type==='gap')cy=GROUND-82;
-  if(type==='coins')cy=GROUND-72-Math.sin(i/(count-1)*Math.PI)*67;
-  if(combo)cy=GROUND-(i<Math.ceil(count/2)?(type==='low-bar'?94:15):(type==='low-bar'?15:94));
-  pickups.push({x:cx,y:cy,kind:i===count-1&&rng()<.09?'gem':'coin',r:8});
- }
- // Low-probability random recovery, conditioned on being injured when the segment is created.
- // In endless runs it can recur, but is never forced or guaranteed.
- if(hp<3&&seconds>=20&&rng()<.004){
-  pickups.push({x:x+length*.12,y:GROUND-35,kind:'heart',r:13});
- }
- return {type,difficulty,x,length,hazards,gaps,pickups};
-}
 function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
 function intersectsGap(rect,gap){return rect.x+rect.w*.77>gap.x&&rect.x+rect.w*.23<gap.x+gap.w}
-function safeGap(gap,speed){return gap.w<=66&&gap.w/speed<=.19}
-// Horizontal separation, converted back into seconds to check every speed tier.
+function safeGap(gap,speed){return gap.w<=68&&gap.w/speed<=.21}
 function minHazardGap(segment,speed){if(segment.hazards.length<2)return Infinity;const h=segment.hazards;return (h[1].x-(h[0].x+h[0].w))/speed}
-return {GROUND,GRAVITY,FIRST_JUMP,SECOND_JUMP,BASE_SPEED,MAX_SPEED,speedAt,randomizer,makeSegment,overlap,intersectsGap,safeGap,minHazardGap};
+function rectAt(x,bottom,duck){const h=duck?DUCK_H:STAND_H;return{x:x,y:bottom-h+4,w:BODY_W,h:h-7}}
+function hazardAt(h,t){if(h.kind==='moving')return {...h,y:GROUND-87+Math.sin(t*3.5+h.phase)*27};return h}
+function buildPattern(x,seconds,speed,pattern,rng){
+ const duration=pattern.duration+.16; // recovery tail allows grounded handoff to the next chunk
+ const length=speed*duration;
+ const hazards=[],gaps=[];
+ for(const [at,kind] of pattern.events){const cx=x+speed*at;
+  if(kind==='gap'){const width=Math.min(64,Math.max(40,speed*.103));gaps.push({x:cx-width/2,w:width});continue}
+  const sizes={low:[34,36,GROUND-36],bar:[76,30,GROUND-64],tall:[42,158,GROUND-158],moving:[34,28,GROUND-87]};
+  const [w,h,y]=sizes[kind];hazards.push({x:cx-w/2,y,w,h,kind,phase:rng()*Math.PI*2});
+ }
+ return {type:pattern.name,x,length,seconds,speed,hazards,gaps,pickups:[],difficulty:seconds<16?1:seconds<40?2:3};
+}
+/* Time-discretized reachability search uses the exact physics and hitboxes of the game.
+   A successful route starts and ends on the ground without losing HP. Candidate segments
+   failing any of several speed probes are discarded. No network or expensive runtime API. */
+function findRoute(segment,speed,startSeconds,withPath=false){
+ // Matches the real game loop's 120Hz integration. Inputs are allowed every 4 ticks
+ // (33ms), not on frame-perfect one-tick windows. A successful route incurs zero hits.
+ const dt=1/120,maxSteps=Math.ceil(segment.length/(Math.max(1,speed)*dt))+10;
+ const horizontalMargin=13,verticalMargin=3;
+ let covered=0,frontier=new Map();
+ frontier.set('start',{bottom:GROUND,vy:0,jumps:0,lastJump:-100,duck:false,groundFrames:40,parent:null,trace:null});
+ for(let frame=0;frame<maxSteps&&covered<segment.length;frame++){
+  const t=frame*dt;
+  covered+=speedAt(startSeconds+t)*dt;
+  const px=segment.x+covered,decision=frame%4===0;
+  const next=new Map();
+  for(const state of frontier.values()){
+   const options=decision?['keep','duck','jump']:['keep'];
+   for(const action of options){
+    let bottom=state.bottom,vy=state.vy,jumps=state.jumps,lastJump=state.lastJump;
+    const onGround=jumps===0&&Math.abs(bottom-GROUND)<.01;
+    if(action==='jump'){
+     if(jumps>=2||t-lastJump<MIN_SECOND_JUMP||jumps===0&&!onGround)continue;
+     vy=-(jumps===0?FIRST_JUMP:SECOND_JUMP);jumps++;lastJump=t;
+    }
+    let duck=(action==='duck'||action==='keep'&&state.duck)&&jumps===0&&onGround;
+    // Collision with holes is checked before vertical physics, just like the game.
+    const overHole=segment.gaps.some(g=>intersectsGap(rectAt(px,bottom,duck),g));
+    vy+=GRAVITY*dt;bottom+=vy*dt;
+    if(bottom>=GROUND){if(overHole)continue;bottom=GROUND;vy=0;jumps=0}
+    if(bottom>GROUND+1)continue;
+    const rect=rectAt(px,bottom,duck);
+    const envelope={x:rect.x-horizontalMargin,y:rect.y-verticalMargin,w:rect.w+2*horizontalMargin,h:rect.h+2*verticalMargin};
+    if(segment.hazards.some(h=>overlap(envelope,hazardAt(h,startSeconds+t+dt))))continue;
+    const groundFrames=jumps===0?Math.min(30,state.groundFrames+1):0;
+    const age=Math.min(5,Math.max(0,Math.floor((t-lastJump)/.035)));
+    const key=[Math.round((GROUND-bottom)/3.5),Math.round(vy/32),jumps,age,duck?1:0,Math.min(12,Math.floor(groundFrames/3))].join(':');
+    if(!next.has(key))next.set(key,{bottom,vy,jumps,lastJump,duck,groundFrames,
+      parent:withPath?state:null,trace:withPath?{x:px,bottom,duck,jumps,action:action==='jump'?'jump':duck?'duck':'none'}:null});
+   }
+  }
+  frontier=next;
+  if(frontier.size===0)return null;
+ }
+ const finished=[...frontier.values()].filter(st=>st.jumps===0&&st.bottom===GROUND&&st.groundFrames>=10);
+ if(!finished.length)return null;
+ if(!withPath)return true;
+ finished.sort((a,b)=>a.lastJump-b.lastJump);
+ const route=[];let st=finished[0];while(st&&st.trace){route.push(st.trace);st=st.parent}
+ return route.reverse();
+}
+function validateSegment(segment){return !!findRoute(segment,segment.speed,segment.seconds)}
+function makeSegment(x,seconds,rng,hp){
+ const speed=speedAt(seconds);
+ const allowed=PATTERNS.filter(p=>(p.minTime||0)<=seconds);
+ const total=allowed.reduce((acc,p)=>acc+p.weight,0);
+ let needle=rng()*total,template=allowed[allowed.length-1];
+ for(const p of allowed){needle-=p.weight;if(needle<0){template=p;break}}
+ const segment=buildPattern(x,seconds,speed,template,rng);
+ // Runtime never performs a graph search in the animation thread. The templates, phase
+ // variation and speed tiers are certified by the same physics solver in unit tests.
+ const pickups=[];
+ const count=segment.type==='coin-wave'?12:Math.max(6,Math.round(segment.length/69));
+ for(let i=0;i<count;i++){
+  const pos=.12+i*(.76/Math.max(1,count-1));
+  const itemX=x+segment.length*pos;
+  const time=(itemX-x)/speed;
+  let y=GROUND-27;  // A standing player automatically collects ordinary coins.
+  // Extra coin chains illustrate how to jump each obstacle, without hiding all rewards in the air.
+  const near=template.events.filter(e=>['low','gap','tall'].includes(e[1])&&Math.abs(e[0]-time)<.24)
+    .sort((a,b)=>Math.abs(a[0]-time)-Math.abs(b[0]-time))[0];
+  if(near){
+   const [at,kind]=near;
+   if(kind==='low'){
+    const airborne=time-(at-.265),height=Math.max(0,FIRST_JUMP*airborne-GRAVITY*airborne*airborne/2);
+    y=GROUND-25-height;
+   }else if(kind==='gap'){
+    const airborne=time-(at-.20),height=Math.max(0,FIRST_JUMP*airborne-GRAVITY*airborne*airborne/2);
+    y=GROUND-25-height;
+   }else if(kind==='tall'){
+    const airborne=time-(at-.53),secondAt=.25;
+    let height=0;
+    if(airborne>=0){
+     if(airborne<=secondAt)height=FIRST_JUMP*airborne-GRAVITY*airborne*airborne/2;
+     else height=FIRST_JUMP*secondAt-GRAVITY*secondAt*secondAt/2+SECOND_JUMP*(airborne-secondAt)-GRAVITY*(airborne-secondAt)*(airborne-secondAt)/2;
+    }
+    y=GROUND-25-Math.max(0,height);
+   }
+  }
+  pickups.push({x:itemX,y,kind:(i===count-1&&rng()<.12)?'gem':'coin',r:9});
+ }
+ // Unscripted scarce healing pickups, only when HP is missing. No guaranteed drops.
+ if(hp<3&&seconds>=20&&rng()<.0025)pickups.push({x:x+speed*.19,y:GROUND-27,kind:'heart',r:13});
+ segment.pickups=pickups;
+ return segment;
+}
+
+return {GROUND,GRAVITY,FIRST_JUMP,SECOND_JUMP,BASE_SPEED,MAX_SPEED,BODY_W,STAND_H,DUCK_H,MIN_SECOND_JUMP,PATTERNS,speedAt,randomizer,makeSegment,overlap,intersectsGap,safeGap,minHazardGap,rectAt,hazardAt,buildPattern,findRoute,validateSegment};
 });
 
-</script><script>
+</script>
+<script>
 (()=>{'use strict';
 const C=window.CyberRunCore,canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false}),$=id=>document.getElementById(id);if(!ctx||!C){$('message').textContent='ゲームを初期化できませんでした。';return}
 const ui={overlay:$('overlay'),msg:$('message'),start:$('primary'),score:$('score'),best:$('best'),distance:$('distance'),speed:$('speed'),hearts:$('hearts'),region:$('region'),duck:$('duck'),jump:$('jump')};
-let viewW=960,viewH=540,s=1,dpr=1,ground=C.GROUND,state='menu',runner=null,segments=[],hazards=[],gaps=[],pickups=[],seed=0,rng=null,spawnCursor=0,elapsed=0,travel=0,score=0,invuln=0,rescue=0,nextFrame=0,lastFrame=0,gameId=0,duckHeld=false,localBest=0,currentRegion='NEON CITY',floaters=[],trail=[];
+let viewW=960,viewH=540,s=1,dpr=1,ground=C.GROUND,state='menu',runner=null,segments=[],hazards=[],gaps=[],pickups=[],seed=0,rng=null,spawnCursor=0,elapsed=0,travel=0,score=0,invuln=0,rescue=0,nextFrame=0,lastFrame=0,gameId=0,duckHeld=false,localBest=0,currentRegion='NEON CITY',floaters=[],trail=[],hitPulse=0;
 try{localBest=Number(localStorage.getItem('cyber-run-v02-best'))||0}catch(_){/* storage may be blocked */}
 function resize(){const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight);s=h/viewH;viewW=w/s;dpr=Math.min(2,devicePixelRatio||1);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr*s,0,0,dpr*s,0,0);ctx.imageSmoothingEnabled=true}
 addEventListener('resize',resize);resize();
@@ -104,18 +191,18 @@ function playerRect(){const height=runner.duck&&runner.jumps===0?27:48;return{x:
 function isOnGround(){return runner.jumps===0&&Math.abs(runner.bottom-ground)<.01}
 function jump(){if(state!=='running'||runner.jumps>=2)return;runner.duck=false;runner.vy=runner.jumps===0?-C.FIRST_JUMP:-C.SECOND_JUMP;runner.jumps++}
 function setDuck(value){if(!runner)return;duckHeld=!!value&&state==='running';runner.duck=duckHeld&&isOnGround();ui.duck.classList.toggle('pressed',duckHeld)}
-function start(){gameId++;seed=((Date.now()^Math.floor(performance.now()*10000))>>>0)||1;rng=C.randomizer(seed);runner=makeRunner();segments=[];hazards=[];gaps=[];pickups=[];spawnCursor=viewW+150;elapsed=0;travel=0;score=0;invuln=0;rescue=0;duckHeld=false;state='running';floaters=[];trail=[];ui.start.textContent='もう一回';ui.overlay.classList.add('hidden');ui.best.textContent='BEST '+localBest.toLocaleString();lastFrame=performance.now();cancelAnimationFrame(nextFrame);nextFrame=requestAnimationFrame(frame)}
+function start(){gameId++;seed=((Date.now()^Math.floor(performance.now()*10000))>>>0)||1;rng=C.randomizer(seed);runner=makeRunner();segments=[];hazards=[];gaps=[];pickups=[];spawnCursor=runner.x+C.speedAt(0)*1.45;elapsed=0;travel=0;score=0;invuln=0;rescue=0;duckHeld=false;state='running';floaters=[];trail=[];hitPulse=0;ui.start.textContent='もう一回';ui.overlay.classList.add('hidden');ui.best.textContent='BEST '+localBest.toLocaleString();lastFrame=performance.now();cancelAnimationFrame(nextFrame);nextFrame=requestAnimationFrame(frame)}
 function pause(){if(state==='running'){state='paused';ui.msg.textContent='一時停止中';ui.start.textContent='再開';ui.overlay.classList.remove('hidden');setDuck(false)}else if(state==='paused'){resume()}}
 function resume(){state='running';ui.overlay.classList.add('hidden');lastFrame=performance.now();nextFrame=requestAnimationFrame(frame)}
 ui.start.addEventListener('click',()=>state==='paused'?resume():start());$('pause').addEventListener('click',pause);
 function bind(button,down,up){button.addEventListener('pointerdown',e=>{e.preventDefault();try{button.setPointerCapture(e.pointerId)}catch(_){}button.classList.add('pressed');down()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>button.addEventListener(type,e=>{e.preventDefault();button.classList.remove('pressed');if(up)up()}))}
 bind(ui.jump,jump);bind(ui.duck,()=>setDuck(true),()=>setDuck(false));
 const keys=new Set();addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();if(keys.has(e.code))return;keys.add(e.code);if(['ArrowUp','Space'].includes(e.code))jump();if(e.code==='ArrowDown')setDuck(true);if(e.code==='Escape'||e.code==='KeyP')pause()});addEventListener('keyup',e=>{keys.delete(e.code);if(e.code==='ArrowDown')setDuck(false)});addEventListener('blur',()=>{keys.clear();if(state==='running')pause()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='running')pause()});addEventListener('contextmenu',e=>e.preventDefault());
-function createAhead(){let guard=0;while(spawnCursor<viewW+700&&guard++<10){const segment=C.makeSegment(spawnCursor,elapsed,rng,runner.hp,viewW);spawnCursor+=segment.length;segments.push(segment);hazards.push(...segment.hazards);gaps.push(...segment.gaps);pickups.push(...segment.pickups)}}
-function hit(){if(invuln>0||state!=='running')return;runner.hp--;invuln=1.35;floaters.push({x:runner.x+16,y:runner.bottom-66,t:0,text:'−1 HP',color:'#ff819d'});if(runner.hp<=0)gameOver()}
+function createAhead(){let guard=0;while(spawnCursor<viewW+700&&guard++<10){const eta=Math.max(0,(spawnCursor-(runner.x+6))/C.speedAt(elapsed));const segment=C.makeSegment(spawnCursor,elapsed+eta,rng,runner.hp,viewW);spawnCursor+=segment.length;segments.push(segment);hazards.push(...segment.hazards);gaps.push(...segment.gaps);pickups.push(...segment.pickups)}}
+function hit(){if(invuln>0||state!=='running')return;runner.hp--;invuln=1.35;hitPulse=.32;floaters.push({x:runner.x+16,y:runner.bottom-66,t:0,text:'−1 HP',color:'#ff819d'});if(runner.hp<=0)gameOver()}
 function gameOver(){state='over';const rounded=Math.floor(score),newRecord=rounded>localBest;if(newRecord){localBest=rounded;try{localStorage.setItem('cyber-run-v02-best',String(localBest))}catch(_){}}
  ui.msg.textContent='SCORE '+rounded.toLocaleString()+' / '+Math.floor(travel/9).toLocaleString()+' m'+(newRecord?' — NEW BEST!':'');ui.start.textContent='もう一回';ui.overlay.classList.remove('hidden');setDuck(false)}
-function step(dt){for(const f of floaters){f.t+=dt;f.y-=22*dt}floaters=floaters.filter(f=>f.t<.65);elapsed+=dt;invuln=Math.max(0,invuln-dt);rescue=Math.max(0,rescue-dt);const speed=C.speedAt(elapsed),move=speed*dt;travel+=move;score+=move*.23;spawnCursor-=move;
+function step(dt){for(const f of floaters){f.t+=dt;f.y-=22*dt}floaters=floaters.filter(f=>f.t<.65);elapsed+=dt;hitPulse=Math.max(0,hitPulse-dt);invuln=Math.max(0,invuln-dt);rescue=Math.max(0,rescue-dt);const speed=C.speedAt(elapsed),move=speed*dt;travel+=move;score+=move*.23;spawnCursor-=move;
  for(const list of [hazards,gaps,pickups,segments])for(const thing of list)thing.x-=move;
  for(const h of hazards)if(h.kind==='moving')h.y=ground-87+Math.sin(elapsed*3.5+h.phase)*27;
  const p=playerRect(),overHole=gaps.some(g=>C.intersectsGap(p,g));
@@ -127,10 +214,10 @@ function step(dt){for(const f of floaters){f.t+=dt;f.y-=22*dt}floaters=floaters.
  for(const h of hazards){if(C.overlap(body,h)){hit();break}}
  for(const item of pickups){if(item.taken)continue;const midx=body.x+body.w/2,midy=body.y+body.h/2;const distance=Math.hypot(item.x-midx,item.y-midy);if(distance<item.r+17){item.taken=true;if(item.kind==='heart'){runner.hp=Math.min(3,runner.hp+1);floaters.push({x:item.x,y:item.y,t:0,text:'HP +1',color:'#ff819d'})}else{const points=item.kind==='gem'?400:100;score+=points;floaters.push({x:item.x,y:item.y,t:0,text:'+'+points,color:item.kind==='gem'?'#caa7ff':'#ffda87'})}}}
  hazards=hazards.filter(h=>h.x+h.w>-40);gaps=gaps.filter(g=>g.x+g.w>-40);pickups=pickups.filter(item=>!item.taken&&item.x>-40);segments=segments.filter(a=>a.x+a.length>-40);
- createAhead();currentRegion=elapsed<45?'NEON CITY':elapsed<95?'MACHINE DISTRICT':'ENERGY TUNNEL';ui.region.textContent=currentRegion;ui.score.textContent=Math.floor(score).toLocaleString();ui.hearts.textContent='♥ '.repeat(runner.hp)+'♡ '.repeat(3-runner.hp);ui.speed.textContent=(speed/C.BASE_SPEED).toFixed(1)+'×';ui.distance.textContent=Math.floor(travel/9).toLocaleString()+' m';
+ createAhead();currentRegion=elapsed<22?'NEON CITY':elapsed<48?'MACHINE DISTRICT':'ENERGY TUNNEL';ui.region.textContent=currentRegion;ui.score.textContent=Math.floor(score).toLocaleString();ui.hearts.textContent='♥ '.repeat(runner.hp)+'♡ '.repeat(3-runner.hp);ui.speed.textContent=(speed/C.BASE_SPEED).toFixed(1)+'×';ui.distance.textContent=Math.floor(travel/9).toLocaleString()+' m';
 }
 function draw(){
- const W=viewW,H=viewH,t=travel,colors=currentRegion==='MACHINE DISTRICT'?['#070b1d','#253354','#ff8db0']:currentRegion==='ENERGY TUNNEL'?['#0d0b26','#3c1f5c','#bd96ff']:['#081028','#16405b','#55d7fa'];
+ const W=viewW,H=viewH,t=travel,velocity=C.speedAt(elapsed),intensity=Math.min(1,(velocity-C.BASE_SPEED)/(C.MAX_SPEED-C.BASE_SPEED)),colors=currentRegion==='MACHINE DISTRICT'?['#070b1d','#253354','#ff8db0']:currentRegion==='ENERGY TUNNEL'?['#0d0b26','#3c1f5c','#bd96ff']:['#081028','#16405b','#55d7fa'];
  const back=ctx.createLinearGradient(0,0,0,H);back.addColorStop(0,colors[0]);back.addColorStop(.85,colors[1]);back.addColorStop(1,'#0a2638');ctx.fillStyle=back;ctx.fillRect(0,0,W,H);
  // Distant neon skyline, looping by camera travel. All geometry is draw-only.
  ctx.save();ctx.globalAlpha=.55;
@@ -147,13 +234,27 @@ function draw(){
   }
  }
  ctx.restore();
+ // Parallax transit trails: stronger at higher speed without hiding the obstacles.
+ ctx.save();ctx.lineWidth=1.2;
+ for(let i=0;i<14+Math.floor(intensity*23);i++){
+  const x=((i*113.7-t*(.43+i%3*.13))%(W+250)+(W+250))%(W+250)-130;
+  const y=105+(i*59%220);const len=(18+intensity*135)*(i%4===0?1.35:.75);
+  ctx.strokeStyle=i%3===0?'rgba(246,133,207,.14)':'rgba(102,237,255,.15)';
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+len,y);ctx.stroke();
+ }
+ ctx.restore();
  // Ground and beat markers.
  ctx.fillStyle='#162b41';ctx.fillRect(0,ground,W,H-ground);
  ctx.fillStyle=colors[2];ctx.fillRect(0,ground,W,4);
- ctx.fillStyle='#52cbe450';for(let i=0;i<15;i++){
-  const x=((i*110-t*.85)%(W+150)+(W+150))%(W+150)-70;
-  ctx.fillRect(x,ground+30+(i%3)*20,39,2);
+ ctx.fillStyle='#52cbe480';for(let i=0;i<24;i++){
+  const x=((i*95-t*1.48)%(W+200)+(W+200))%(W+200)-100;
+  ctx.fillRect(x,ground+24+(i%4)*23,24+intensity*65,2);
  }
+ // Street-light flashes at sprint speed create rhythmic flow cues.
+ if(intensity>.35){ctx.fillStyle='rgba(115,247,255,.045)';for(let i=0;i<8;i++){
+  const x=((i*257-t*.93)%(W+250)+(W+250))%(W+250)-120;
+  ctx.fillRect(x,ground-145,3,140);}}
+
  for(const g of gaps){ctx.fillStyle='#050a19';ctx.fillRect(g.x,ground-1,g.w,H-ground+2);ctx.fillStyle='#f77c9c';ctx.fillRect(g.x-4,ground-2,4,15);ctx.fillRect(g.x+g.w,ground-2,4,15)}
  // Obstacles: each type must have its own silhouette at speed.
  for(const h of hazards){
@@ -181,9 +282,9 @@ function draw(){
   const crouching=runner.duck&&runner.jumps===0,h=crouching?27:48,x=runner.x,y=runner.bottom-h;
   ctx.save();ctx.globalAlpha=invuln>0&&Math.floor(invuln*12)%2===0?.42:1;
   // Streamlines and legs visually explain speed and grounded movement.
-  const stride=Math.sin(elapsed*22)*5;
+  const stride=Math.sin(elapsed*(22+intensity*14))*5;
   ctx.fillStyle='#39dfc5';ctx.globalAlpha*=.2;
-  for(let k=1;k<=3;k++)ctx.fillRect(x-k*19,y+h*.65+k*3,15+k*5,2);
+  for(let k=1;k<=3+Math.floor(intensity*4);k++)ctx.fillRect(x-k*(18+intensity*7),y+h*.65+k*3,14+k*(5+intensity*6),2);
   ctx.globalAlpha=invuln>0&&Math.floor(invuln*12)%2===0?.42:1;
   ctx.fillStyle='#24a8a9';ctx.fillRect(x+3,y+h-10,11,10);
   ctx.fillStyle='#7dffde';ctx.fillRect(x+8,y+6,23,h-16);
@@ -194,6 +295,7 @@ function draw(){
   if(!crouching){ctx.fillStyle='#66f6e0';ctx.fillRect(x+10,y+h-3,11,5+stride);ctx.fillRect(x+23,y+h-3,10,5-stride)}
   ctx.restore();
  }
+ if(hitPulse>0){ctx.fillStyle='rgba(255,64,107,'+(hitPulse*.28)+')';ctx.fillRect(0,0,W,H)}
  for(const f of floaters){ctx.save();ctx.globalAlpha=Math.max(0,1-f.t/.65);ctx.fillStyle=f.color;ctx.font='bold 16px system-ui';ctx.textAlign='center';ctx.fillText(f.text,f.x,f.y);ctx.restore()}
 }
 function frame(now){if(state!=='running')return;let dt=Math.min(.05,Math.max(0,(now-lastFrame)/1000));lastFrame=now; // substeps prevent tunneling at higher speed or low FPS

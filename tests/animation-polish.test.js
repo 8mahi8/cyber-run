@@ -27,5 +27,5 @@ test('live gameplay advances gait by fixed timestep and passes phase into render
  const game=fs.readFileSync(path.join(__dirname,'../game.js'),'utf8');
  assert.match(game,/gaitPhase\+=\(18\+17\*/);
  assert.match(game,/phase:gaitPhase/);
- assert.match(game,/gaitPhase=0;cleanFlash=0/);
+ assert.match(game,/gaitPhase=0;(?:[^;]+;)*cleanFlash=0/);
 });

@@ -133,7 +133,7 @@ function physicsStep(p,dt,x,platforms,gaps,duckHeld,jumpRequested,time,rescue=0,
   }
  }
  if(landing){
-  const spring=landing.id==='ground'&&pads.find(pad=>pad.kind==='spring'&&x+HITBOX_OFFSET_X+BODY_W*.86>pad.x&&x+HITBOX_OFFSET_X+BODY_W*.14<pad.x+pad.w);
+  const spring=landing.id==='ground'&&pads.find(pad=>(!pad.kind||pad.kind==='spring')&&x+HITBOX_OFFSET_X+BODY_W*.86>pad.x&&x+HITBOX_OFFSET_X+BODY_W*.14<pad.x+pad.w);
   if(spring){p.bottom=GROUND;p.vy=-SPRING_JUMP;p.jumps=1;p.support=null;p.coyote=0;p.duck=false;p.jumpBuffer=0}
   else {p.bottom=landing.y;p.vy=0;p.jumps=0;p.support=landing.id;p.coyote=.075;p.duck=!!duckHeld; /* Retain a buffered jump through touchdown. */
    const floor=platforms.find(f=>f.id===landing.id);
@@ -370,7 +370,10 @@ function makeSegment(x,seconds,rng,hp,recent={}){
   const alternate=choices.filter(p=>p.name!==recent.type);
   const pool=alternate.length?alternate:choices;
   const pattern=pool[Math.floor(rng()*pool.length)];
-  return buildPattern(x,seconds,speed,pattern,rng,0);
+  const segment=buildPattern(x,seconds,speed,pattern,rng,0);
+  // Preserve the V0.7 rare recovery rule in advanced routes too.
+  if(hp<3&&seconds>20&&rng()<.0025)segment.pickups.push({x:x+speed*.10,y:GROUND-24,r:13,kind:'heart'});
+  return segment;
  }
  // Experimental V0.7 route-first generator, with legacy motifs as safe fallback.
  if(typeof globalThis!=='undefined'&&globalThis.CYBER_RUN_V07_EXPERIMENTAL===true&&rng()<(seconds<10?.34:.73)){

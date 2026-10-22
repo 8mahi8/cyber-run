@@ -76,7 +76,7 @@ const PATTERNS=[
   hazards:[[.81,'low'],[1.91,'platform-bar',1]]},
  // Two new MECHANICAL systems for V0.8, not just different hurdle graphics:
  // A fragile catwalk disappears 340ms after touchdown, demanding a second jump.
- {name:'fracture-hop',theme:'FRACTURE CHASM',duration:2.50,weight:7.5,minTime:14,challenge:true,
+ {name:'fracture-hop',theme:'FRACTURE CHASM',duration:2.50,weight:7.5,minTime:22,challenge:true,
   script:[[.20,'jump'],[.96,'jump']],platforms:[[.48,1.23,75,'fragile']],
   gaps:[[1.00,1.20,'seconds']],hazards:[]},
  {name:'fracture-shutter',theme:'FRACTURE CHASM',duration:3.25,weight:7,minTime:37,challenge:true,

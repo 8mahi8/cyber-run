@@ -62,6 +62,15 @@ const PATTERNS=[
  {name:'overdrive-rhythm',theme:'RHYTHM BURST',duration:4.56,weight:6.0,minTime:40,
   script:[[.18,'jump'],[.90,'duck-on'],[1.23,'duck-off'],[1.36,'jump'],[2.07,'duck-on'],[2.40,'duck-off'],[2.55,'jump'],[3.27,'duck-on'],[3.60,'duck-off'],[3.73,'jump']],
   hazards:[[.43,'low'],[1.07,'bar'],[1.61,'low'],[2.25,'bar'],[2.80,'low'],[3.45,'bar'],[4.00,'low']]},
+ // Ascending aerial routes: land on a low platform, jump to a HIGHER one,
+ // then exit naturally. The alternate adds a ceiling on the second level.
+ {name:'sky-ascend',theme:'SKY CLIMB',duration:3.10,weight:3.9,minTime:12,
+  script:[[.19,'jump'],[.89,'jump']],platforms:[[.46,1.19,75],[1.32,2.10,142]],
+  hazards:[[.81,'low'],[1.81,'low']]},
+ {name:'sky-ascend-duck',theme:'SKY CLIMB',duration:3.15,weight:3.9,minTime:15,
+  script:[[.19,'jump'],[.89,'jump'],[1.73,'duck-on'],[2.15,'duck-off']],
+  platforms:[[.46,1.20,75],[1.32,2.25,142]],
+  hazards:[[.81,'low'],[1.91,'platform-bar',1]]},
  {name:'breather',theme:'RECOVERY',duration:1.12,weight:.15,script:[],hazards:[]},
 ];
 function speedAt(seconds){return Math.min(MAX_SPEED,BASE_SPEED+Math.max(0,seconds)*7.5)}
@@ -109,7 +118,7 @@ function physicsStep(p,dt,x,platforms,gaps,duckHeld,jumpRequested,time,rescue=0,
  else {p.support=null;if(wasSupported&&p.jumps===0)p.coyote=.075;if(p.jumps===0&&p.coyote<=0)p.jumps=1;p.duck=false}
  return p;
 }
-function buildPattern(x,seconds,speed,pattern,rng){
+function buildPattern(x,seconds,speed,pattern,rng,riff=0){
  const duration=pattern.duration;
  const distance=t=>{
   // Travel at the real acceleration curve, not the speed sampled at chunk entry.
@@ -119,14 +128,21 @@ function buildPattern(x,seconds,speed,pattern,rng){
   return initial*rising+3.75*rising*rising+MAX_SPEED*Math.max(0,t-rising);
  };
  const platforms=(pattern.platforms||[]).map(([a,b,height],i)=>({id:pattern.name+':'+i,x:x+distance(a),w:distance(b-a),y:GROUND-height,kind:'one-way'}));
- const hazards=[];for(const [at,kind,extra] of pattern.hazards){
+ // Micro-riffs change the relative timing of existing hazards, not the move script.
+ // Variants must be independently certified against the real runner physics.
+ const hazards=[];let hazardIndex=0;
+ for(const [at,kind,extra] of pattern.hazards){
+  const timingShift=riff===1?(hazardIndex%2?-.014:.016):
+   riff===2?(hazardIndex%2?.016:-.014):
+   riff===3?(hazardIndex%3===0?.024:-.012):0;
+  hazardIndex++;
   const sz={low:[32,36,GROUND-36],bar:[69,29,GROUND-64],tall:[40,158,GROUND-158],moving:[34,28,GROUND-87],
    'platform-bar':[65,28,GROUND-(pattern.platforms?.[extra]?.[2]||80)-62]};
-  const [w,h,y]=sz[kind];hazards.push({x:x+distance(at)-w/2,y,w,h,kind,phase:0});
+  const [w,h,y]=sz[kind];hazards.push({x:x+distance(at+timingShift)-w/2,y,w,h,kind,phase:0});
  }
  const pads=(pattern.pads||[]).map(([at,width],i)=>({id:pattern.name+':spring:'+i,x:x+distance(at)-width/2,w:width,y:GROUND,kind:'spring'}));
  const gaps=(pattern.gaps||[]).map(([at,width])=>({x:x+distance(at)-width/2,w:width}));
- return {type:pattern.name,theme:pattern.theme,x,length:distance(duration),seconds,speed,hazards,gaps,platforms,pads,pickups:[],script:pattern.script,pattern};
+ return {type:pattern.name,theme:pattern.theme,x,length:distance(duration),seconds,speed,hazards,gaps,platforms,pads,pickups:[],script:pattern.script,pattern,riff};
 }
 // Replays a desired movement sequence using the SAME physics tick as the game, checking
 // environment collision and cross-boundary grounded handoff. No search on the iPad.
@@ -174,7 +190,11 @@ function makeSegment(x,seconds,rng,hp,recent={}){
  const total=weighted.reduce((sum,z)=>sum+z.weight,0);
  let needle=rng()*total,pattern=allowed[allowed.length-1];
  for(const {p,weight} of weighted){needle-=weight;if(needle<0){pattern=p;break}}
- const segment=buildPattern(x,seconds,speed,pattern,rng);
+ // Pre-certified micro-riffs keep the action grammar intact while varying actual
+ // obstacle timing. rhythm-three has less clearance and permits only safe riffs.
+ const approvedRiffs=pattern.name==='rhythm-three'?[0,2]:[0,1,2,3];
+ const riff=approvedRiffs[Math.floor(rng()*approvedRiffs.length)];
+ const segment=buildPattern(x,seconds,speed,pattern,rng,riff);
  // Healing is deliberately rare, random, and never spawns at full HP. No score pickups.
  if(hp<3&&seconds>20&&rng()<.0025){segment.pickups.push({x:x+speed*.10,y:GROUND-24,r:13,kind:'heart'})}
  return segment;

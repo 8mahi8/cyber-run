@@ -20,7 +20,7 @@ test('sky-climb layouts require two ordered platform landings',()=>{
 test('pre-certified micro-riffs are traversable at 9 speeds with input slack',()=>{
  let checks=0;
  for(const motif of C.PATTERNS){
-  const riffs=motif.name==='rhythm-three'?[0,2]:[0,1,2,3];
+  const riffs=motif.name==='rhythm-five'?[0,2]:motif.name==='aerial-surge'?[0,1]:[0,1,2,3];
   for(const secs of TIMES.filter(t=>t>=(motif.minTime||0))){
    for(const riff of riffs){
     const seg=C.buildPattern(250,secs,C.speedAt(secs),motif,C.randomizer(37),riff);
@@ -42,7 +42,8 @@ test('generated riffs preserve a no-damage witness for numerous seeds and stages
   for(let i=0;i<32;i++){
    const s=C.makeSegment(x,t,rng,3,previous);
    assert.ok([0,1,2,3].includes(s.riff));
-   assert.ok(s.riff!==1&&s.riff!==3 || s.type!=='rhythm-three');
+   assert.ok(s.type!=='rhythm-five'||[0,2].includes(s.riff));
+   assert.ok(s.type!=='aerial-surge'||[0,1].includes(s.riff));
    const r=C.replayPattern(s,{offset:0});
    assert.ok(r.ok,`seed=${seed} at=${t.toFixed(2)} ${s.type} riff=${s.riff}: ${JSON.stringify(r)}`);
    checks++;x+=s.length;t+=C.timeToTravel(t,s.length);previous={type:s.type,theme:s.theme};

@@ -153,7 +153,9 @@ function replayPattern(segment,opts={}){
  const dt=DT,offset=opts.offset||0,x0=segment.x,initialTime=segment.seconds;
  const pattern=segment.pattern||PATTERNS.find(p=>p.name===segment.type);
  if(!pattern)return {ok:false,reason:'unknown pattern'};
- const runner=makeRunner(x0);let time=0,covered=0,events=pattern.script||[],next=0,duck=false,steps=0;
+ // Verify independent per-action input drift; the chronological order may change.
+ const events=(pattern.script||[]).map((event,i)=>[event[0]+(opts.actionOffsets?.[i]||0),event[1]]).sort((a,b)=>a[0]-b[0]);
+ const runner=makeRunner(x0);let time=0,covered=0,next=0,duck=false,steps=0;
  const route=[];
  const maxSteps=Math.max(1000,Math.ceil((pattern.duration||0)/dt)+90);
  while(covered<segment.length&&steps++<maxSteps){
@@ -195,6 +197,8 @@ function trajectoryTrace(events,duration,seconds,platforms=[]){
 function trajectoryComposition(seconds,rng){
  const moves=['vault','slide','double','gap','slide-vault','vault-slide','sky-line'];
  const pressure=Math.min(1,seconds/100),count=4+Math.floor(rng()*3)+Math.floor(pressure*2);
+ // Shorter links between distinct actions, not artificially faster jump physics.
+ const bridge=seconds>=55?.15:seconds>=20?.055:0;
  const script=[],needs=[];let cursor=.18,last='',skyIndex=0;
  for(let i=0;i<count;i++){
   let choices=moves.slice();
@@ -207,26 +211,26 @@ function trajectoryComposition(seconds,rng){
   if(name==='sky-line'){
    act(t,'jump');act(t+.98,'jump');const index=skyIndex++;
    want('platform',t+.28,t+1.50,index);
-   want('platform-low',t+1.35,t+1.46,index);cursor=t+2.12;
+   want('platform-low',t+1.35,t+1.46,index);cursor=t+2.12-bridge;
   }else if(name==='slide'){
-   act(t,'duck-on');act(t+.56,'duck-off');want('duck-gate',t+.24,t+.35);cursor=t+.84;
+   act(t,'duck-on');act(t+.56,'duck-off');want('duck-gate',t+.24,t+.35);cursor=t+.84-bridge;
   }else if(name==='vault'){
-   act(t,'jump');want('low',t+.29,t+.38);cursor=t+.92;
+   act(t,'jump');want('low',t+.29,t+.38);cursor=t+.92-bridge;
   }else if(name==='double'){
-   act(t,'jump');act(t+.36,'jump');want('tall',t+.69,t+.87);cursor=t+1.58;
+   act(t,'jump');act(t+.36,'jump');want('tall',t+.69,t+.87);cursor=t+1.58-bridge;
   }else if(name==='gap'){
-   act(t,'jump');want('gap',t+.30,t+.42);cursor=t+.92;
+   act(t,'jump');want('gap',t+.30,t+.42);cursor=t+.92-bridge;
   }else if(name==='slide-vault'){
    act(t,'duck-on');act(t+.57,'duck-off');act(t+.79,'jump');
-   want('duck-gate',t+.25,t+.37);want('low',t+1.10,t+1.21);cursor=t+1.69;
+   want('duck-gate',t+.25,t+.37);want('low',t+1.10,t+1.21);cursor=t+1.69-bridge;
   }else{
    act(t,'jump');act(t+.94,'duck-on');act(t+1.50,'duck-off');
-   want('low',t+.30,t+.38);want('bar',t+1.19,t+1.31);cursor=t+1.77;
+   want('low',t+.30,t+.38);want('bar',t+1.19,t+1.31);cursor=t+1.77-bridge;
   }
  }
  script.sort((a,b)=>a[0]-b[0]);return {script,needs,duration:cursor+.18,count};
 }
-function composeTrajectorySegment(x,seconds,rng){
+function composeTrajectoryAttempt(x,seconds,rng){
  const plan=trajectoryComposition(seconds,rng);
  const pilot=trajectoryTrace(plan.script,plan.duration,seconds);
  if(!pilot)return null;
@@ -268,9 +272,30 @@ function composeTrajectorySegment(x,seconds,rng){
   platforms,pads:[],pickups:[],script:plan.script,pattern,riff:0,origin:'trajectory-first',planCount:plan.count};
  // Reuse actual game physics; do not allow a route with no certified solution.
  if(![0,-.02,.02,-.04,.04].every(offset=>replayPattern(segment,{offset}).ok))return null;
+ // Denser links must survive independent action timing changes, not only a
+ // uniform shift that unrealistically preserves every relative input gap.
+ if(seconds>=20){
+  const events=plan.script;
+  const probes=[
+   events.map((_,i)=>i%2===0?.10:-.10),
+   events.map((_,i)=>i%2===0?-.10:.10),
+   events.map((_,i)=>((Math.imul(i+17,1103515245)>>>24)/255-.5)*.20),
+   events.map((_,i)=>((Math.imul(i+47,1664525)>>>24)/255-.5)*.20)
+  ];
+  if(!probes.every(actionOffsets=>replayPattern(segment,{actionOffsets}).ok))return null;
+ }
  return segment;
 }
 
+function composeTrajectorySegment(x,seconds,rng){
+ // Bounded retry of action plans rejected by landing, gap, and jitter checks.
+ // Remains opt-in and never delays the stable V0.6 runner.
+ for(let attempt=0;attempt<3;attempt++){
+  const candidate=composeTrajectoryAttempt(x,seconds,rng);
+  if(candidate)return candidate;
+ }
+ return null;
+}
 function makeSegment(x,seconds,rng,hp,recent={}){
  const speed=speedAt(seconds);
  // Experimental V0.7 route-first generator, with legacy motifs as safe fallback.

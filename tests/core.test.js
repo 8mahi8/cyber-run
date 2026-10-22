@@ -1,11 +1,35 @@
 const test=require('node:test'),assert=require('node:assert/strict'),C=require('../core.js');
-const times=[0,8,16,25,40,60,80,130];
-test('acceleration is monotonic and capped',()=>{let last=0;for(let i=0;i<1000;i++){const v=C.speedAt(i);assert.ok(v>=last&&v<=C.MAX_SPEED);last=v}assert.ok(C.speedAt(30)>C.BASE_SPEED*1.5)});
-test('single and double jump physics distinguish tall blockers',()=>{const apex=C.FIRST_JUMP**2/(2*C.GRAVITY);const p=C.PATTERNS.find(x=>x.name==='tall');const s=C.buildPattern(100,30,C.speedAt(30),p,C.randomizer(7));assert.ok(apex>100&&apex<150);assert.ok(s.hazards[0].h>apex+10);assert.ok(C.findRoute(s,s.speed,30))});
-test('seeded generation is reproducible',()=>{let a=C.randomizer(1234),b=C.randomizer(1234);for(let i=0;i<200;i++)assert.deepEqual(C.makeSegment(500,i%100,a,2),C.makeSegment(500,i%100,b,2))});
-test('all obstacle archetypes have no-hit routes across speeds and phases',()=>{let n=0;for(const t of times)for(const p of C.PATTERNS){if(t<(p.minTime||0))continue;for(let seed=1;seed<=13;seed++){const s=C.buildPattern(100,t,C.speedAt(t),p,C.randomizer(seed));assert.ok(C.validateSegment(s),'Unreachable '+p.name+' at '+t+' seed '+seed);assert.ok(s.hazards.every(h=>h.x>=s.x&&h.x+h.w<=s.x+s.length));assert.ok(s.gaps.every(g=>C.safeGap(g,C.speedAt(t))));n++}}assert.ok(n>1000)});
-test('normal coins are mainly at running height',()=>{let rng=C.randomizer(933),ground=0,normal=0,raised=0,types=new Set();for(let i=0;i<1500;i++){const s=C.makeSegment(100,i%110,rng,2);types.add(s.type);assert.ok(s.pickups.length>=6);for(const item of s.pickups){assert.ok(item.y>10&&item.y<C.GROUND);if(item.kind==='heart')continue;normal++;if(item.y>=C.GROUND-32)ground++;if(item.y<C.GROUND-75)raised++}}assert.ok(ground/normal>.5);assert.ok(raised>50);for(const type of ['low','bar','tall','moving','low-bar','bar-low','low-bar-low','bar-low-bar','gap'])assert.ok(types.has(type))});
-test('hearts require missing HP and 20s+ survival',()=>{const zero=()=>0;for(const t of [0,20,60])assert.ok(!C.makeSegment(0,t,zero,3).pickups.some(i=>i.kind==='heart'));for(const t of [0,10,19])assert.ok(!C.makeSegment(0,t,zero,1).pickups.some(i=>i.kind==='heart'));assert.ok(C.makeSegment(0,60,zero,1).pickups.some(i=>i.kind==='heart'))});
-test('duck clears bars but not ground blocks',()=>{const bar={x:100,y:C.GROUND-64,w:76,h:30},low={x:100,y:C.GROUND-36,w:34,h:36};assert.ok(C.overlap(C.rectAt(120,C.GROUND,false),bar));assert.ok(!C.overlap(C.rectAt(120,C.GROUND,true),bar));assert.ok(C.overlap(C.rectAt(120,C.GROUND,true),low))});
-
-test('32 moving-phase offsets remain beatable',()=>{let n=0;for(const t of [18,22,25,40,58,80,130])for(const p of C.PATTERNS){if(t<(p.minTime||0)||!p.events.some(e=>e[1]==='moving'))continue;for(let phase=0;phase<32;phase++){const seg=C.buildPattern(100,t,C.speedAt(t),p,C.randomizer(2345));for(const h of seg.hazards)if(h.kind==='moving')h.phase=phase/32*Math.PI*2;assert.ok(C.validateSegment(seg),'phase '+phase+' type '+p.name+' t '+t);n++}}assert.ok(n>500)});
+const TIMES=[0,4,8,12,16,20,24,28,35,40,55,65,85,100,200];
+test('accelerates and caps',()=>{let last=0;for(let i=0;i<400;i++){let v=C.speedAt(i);assert.ok(v>=last&&v<=C.MAX_SPEED);last=v}assert.ok(C.speedAt(45)>C.BASE_SPEED*1.8)});
+test('13 action-first motifs including aerial and ground sequences',()=>{assert.ok(C.PATTERNS.length>=12);assert.ok(new Set(C.PATTERNS.map(p=>p.theme)).size>=4);assert.ok(C.PATTERNS.filter(p=>p.platforms?.length).length>=5)});
+test('timed witness routes work across speed tiers with 40 ms input variation',()=>{
+ let count=0;for(const seconds of TIMES)for(const p of C.PATTERNS){if(seconds<(p.minTime||0))continue;
+  const segment=C.buildPattern(100,seconds,C.speedAt(seconds),p,C.randomizer(44));
+  for(const offset of [-.04,-.025,0,.025,.04]){const r=C.replayPattern(segment,{offset});count++;assert.ok(r.ok,p.name+' '+seconds+' '+offset+' '+JSON.stringify(r))}
+ }assert.ok(count>=750);
+});
+test('aerial witness lands on the platform and ends grounded',()=>{
+ for(const p of C.PATTERNS.filter(p=>p.platforms?.length)){
+  const seg=C.buildPattern(100,65,C.speedAt(65),p,C.randomizer(1)),r=C.replayPattern(seg,{trace:true});
+  assert.ok(r.ok,p.name);assert.ok(r.route.some(s=>s.support?.startsWith(p.name)),p.name);assert.equal(r.route.at(-1).support,'ground');
+ }
+});
+test('one-way platforms allow jump-through and natural fall-off',()=>{
+ const platform={id:'test',x:0,w:300,y:300},p=C.makeRunner(30);p.bottom=338;p.vy=-700;p.jumps=1;p.support=null;
+ let passed=false,landed=false;for(let f=0;f<110;f++){
+  C.physicsStep(p,C.DT,30,[platform],[],false,false,f*C.DT);if(p.bottom<platform.y-10)passed=true;if(p.support==='test'){landed=true;break}
+ }assert.ok(passed&&landed);C.physicsStep(p,C.DT,380,[platform],[],false,false,2);assert.equal(p.support,null);assert.ok(p.bottom>platform.y);
+});
+test('no score collectibles; only rare healing hearts below 3 HP',()=>{
+ const rng=C.randomizer(655),types=new Set();
+ for(let i=0;i<1200;i++){const seg=C.makeSegment(1000,i/9,rng,i%3+1);types.add(seg.type);assert.ok(seg.pickups.every(item=>item.kind==='heart'))}
+ assert.ok(types.size>=12);
+ for(let t of [0,20,60])assert.equal(C.makeSegment(0,t,()=>0,3).pickups.length,0);
+ assert.equal(C.makeSegment(0,60,()=>0,1).pickups[0].kind,'heart');
+});
+test('same seed yields deterministic courses',()=>{
+ const a=C.randomizer(555),b=C.randomizer(555);for(let i=0;i<130;i++)assert.deepEqual(C.makeSegment(i*500,i,a,2),C.makeSegment(i*500,i,b,2));
+});
+test('each course contains a safe exit buffer',()=>{
+ for(const p of C.PATTERNS){const s=C.buildPattern(0,70,C.speedAt(70),p,C.randomizer(1)),right=Math.max(0,...s.hazards.map(h=>h.x+h.w),...s.gaps.map(g=>g.x+g.w));assert.ok(s.length-right>100,p.name)}
+});

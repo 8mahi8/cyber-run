@@ -2,7 +2,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 from PIL import Image
 R=Path(__file__).resolve().parents[1]
-html=(R/'index.html').read_text().replace('<link rel="stylesheet" href="style.css">','<style>'+ (R/'style.css').read_text()+'</style>').replace('<script src="core.js"></script><script src="game.js"></script>','<script>'+ (R/'core.js').read_text()+'</script><script>'+ (R/'game.js').read_text()+'</script>')
+html=(R/'index.html').read_text().replace('<link rel="stylesheet" href="style.css">','<style>'+ (R/'style.css').read_text()+'</style>').replace('<script src="core.js"></script><script src="stickman.js"></script><script src="game.js"></script>','<script>'+ (R/'core.js').read_text()+'</script><script>'+ (R/'stickman.js').read_text()+'</script><script>'+ (R/'game.js').read_text()+'</script>')
 with sync_playwright() as p:
  b=p.chromium.launch(headless=True, executable_path='/usr/bin/chromium',args=['--no-sandbox','--disable-dev-shm-usage'])
  for name,size in [('iphone_landscape',(844,390)),('ipad',(1024,768)),('iphone_portrait',(390,844))]:

@@ -3,7 +3,22 @@ const C=window.CyberRunCore,canvas=document.getElementById('game'),ctx=canvas.ge
 const ui={overlay:$('overlay'),msg:$('message'),start:$('primary'),score:$('score'),best:$('best'),distance:$('distance'),speed:$('speed'),hearts:$('hearts'),region:$('region'),duck:$('duck'),jump:$('jump')};
 let viewW=960,viewH=540,s=1,dpr=1,ground=C.GROUND,state='menu',runner=null,segments=[],hazards=[],gaps=[],platforms=[],pickups=[],seed=0,rng=null,spawnCursor=0,elapsed=0,travel=0,invuln=0,rescue=0,nextFrame=0,lastFrame=0,gameId=0,duckHeld=false,jumpQueued=false,localBest=0,currentRegion='NEON CITY',currentTheme='GROUND FLOW',previousCourse=null,floaters=[],trail=[],hitPulse=0;
 try{localBest=Number(localStorage.getItem('cyber-run-v05-distance-best'))||0}catch(_){/* storage may be blocked */}
-function resize(){const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight);s=h/viewH;viewW=w/s;dpr=Math.min(2,devicePixelRatio||1);canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr*s,0,0,dpr*s,0,0);ctx.imageSmoothingEnabled=true}
+function resize(){
+ const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight);
+ s=h/viewH;viewW=w/s;dpr=Math.min(2,devicePixelRatio||1);
+ canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
+ ctx.setTransform(dpr*s,0,0,dpr*s,0,0);ctx.imageSmoothingEnabled=true;
+ // On phone rotation keep the runner visible and preserve relative obstacle distances.
+ if(runner){
+  const safeX=Math.min(Math.max(86,viewW*.19)+6,Math.max(12,viewW-40));
+  const shift=safeX-runner.x;
+  if(shift!==0){
+   runner.x=safeX;spawnCursor+=shift;
+   for(const list of [segments,hazards,gaps,platforms,pickups,floaters])
+    for(const entity of list)entity.x+=shift;
+  }
+ }
+}
 addEventListener('resize',resize);resize();
 function makeRunner(){return C.makeRunner(Math.max(86,viewW*.19)+6)}
 function playerRect(){return C.rectAt(runner.x+6,runner.bottom,runner.duck)}
@@ -11,8 +26,8 @@ function isOnGround(){return C.isSupported(runner)}
 function jump(){if(state!=='running')return;jumpQueued=true}
 function setDuck(value){if(!runner)return;duckHeld=!!value&&state==='running';runner.duck=duckHeld&&isOnGround()&&runner.jumps===0;ui.duck.classList.toggle('pressed',duckHeld)}
 function start(){gameId++;seed=((Date.now()^Math.floor(performance.now()*10000))>>>0)||1;rng=C.randomizer(seed);runner=makeRunner();segments=[];hazards=[];gaps=[];platforms=[];pickups=[];spawnCursor=runner.x+C.speedAt(0)*1.45;elapsed=0;travel=0;invuln=0;rescue=0;duckHeld=false;jumpQueued=false;previousCourse=null;state='running';floaters=[];trail=[];hitPulse=0;ui.start.textContent='もう一回';ui.overlay.classList.add('hidden');ui.best.textContent='BEST '+localBest.toLocaleString()+' m';lastFrame=performance.now();cancelAnimationFrame(nextFrame);nextFrame=requestAnimationFrame(frame)}
-function pause(){if(state==='running'){state='paused';ui.msg.textContent='一時停止中';ui.start.textContent='再開';ui.overlay.classList.remove('hidden');setDuck(false)}else if(state==='paused'){resume()}}
-function resume(){state='running';ui.overlay.classList.add('hidden');lastFrame=performance.now();nextFrame=requestAnimationFrame(frame)}
+function pause(){if(state==='running'){state='paused';cancelAnimationFrame(nextFrame);nextFrame=0;ui.msg.textContent='一時停止中';ui.start.textContent='再開';ui.overlay.classList.remove('hidden');setDuck(false)}else if(state==='paused'){resume()}}
+function resume(){if(state!=='paused')return;cancelAnimationFrame(nextFrame);nextFrame=0;state='running';ui.overlay.classList.add('hidden');lastFrame=performance.now();nextFrame=requestAnimationFrame(frame)}
 ui.start.addEventListener('click',()=>state==='paused'?resume():start());$('pause').addEventListener('click',pause);
 function bind(button,down,up){button.addEventListener('pointerdown',e=>{e.preventDefault();try{button.setPointerCapture(e.pointerId)}catch(_){}button.classList.add('pressed');down()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>button.addEventListener(type,e=>{e.preventDefault();button.classList.remove('pressed');if(up)up()}))}
 bind(ui.jump,jump);bind(ui.duck,()=>setDuck(true),()=>setDuck(false));

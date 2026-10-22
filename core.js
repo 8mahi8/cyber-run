@@ -74,6 +74,23 @@ const PATTERNS=[
   script:[[.19,'jump'],[.89,'jump'],[1.65,'duck-on'],[2.15,'duck-off']],
   platforms:[[.46,1.20,75],[1.32,2.25,142]],
   hazards:[[.81,'low'],[1.91,'platform-bar',1]]},
+ // Two new MECHANICAL systems for V0.8, not just different hurdle graphics:
+ // A fragile catwalk disappears 340ms after touchdown, demanding a second jump.
+ {name:'fracture-hop',theme:'FRACTURE CHASM',duration:2.50,weight:7.5,minTime:14,challenge:true,
+  script:[[.20,'jump'],[.96,'jump']],platforms:[[.48,1.23,75,'fragile']],
+  gaps:[[1.00,1.20,'seconds']],hazards:[]},
+ {name:'fracture-shutter',theme:'FRACTURE CHASM',duration:3.25,weight:7,minTime:37,challenge:true,
+  script:[[.20,'jump'],[.96,'jump'],[2.15,'duck-on'],[2.70,'duck-off']],
+  platforms:[[.48,1.23,75,'fragile']],gaps:[[1.00,1.20,'seconds']],
+  hazards:[[2.43,'duck-gate']]},
+ // An airborne boost ring is hitbox-activated once and needed to clear the gap.
+ {name:'orb-leap',theme:'AERIAL REBOUND',duration:2.55,weight:7.5,minTime:22,challenge:true,
+  script:[[.17,'jump'],[1.10,'jump']],pads:[[.80,44,95,'airboost']],
+  gaps:[[1.03,1.55,'seconds']],hazards:[]},
+ {name:'orb-gate',theme:'AERIAL REBOUND',duration:3.28,weight:7,minTime:52,challenge:true,
+  script:[[.17,'jump'],[1.10,'jump'],[2.13,'duck-on'],[2.76,'duck-off']],
+  pads:[[.80,44,95,'airboost']],gaps:[[1.03,1.55,'seconds']],
+  hazards:[[2.42,'duck-gate']]},
  {name:'breather',theme:'RECOVERY',duration:1.12,weight:.15,script:[],hazards:[]},
 ];
 function speedAt(seconds){return Math.min(MAX_SPEED,BASE_SPEED+Math.max(0,seconds)*7.5)}
@@ -341,6 +358,20 @@ function composeTrajectorySegment(x,seconds,rng){
 }
 function makeSegment(x,seconds,rng,hp,recent={}){
  const speed=speedAt(seconds);
+ // Genuine advanced mechanics should recur; do not bury them inside 30 motifs.
+ // Avoid three consecutive repeats, while keeping the procedural action-first
+ // route generator and the original aerial patterns for variety.
+ const specials=PATTERNS.filter(p=>p.challenge&&(p.minTime||0)<=seconds);
+ const recentSpecial=(recent.recentTypes||[]).some(name=>PATTERNS.some(p=>p.challenge&&p.name===name));
+ const chance=seconds>=55?.30:seconds>=25?.21:.08;
+ if(specials.length&&!recentSpecial&&rng()<chance){
+  const multi=seconds>=45?specials.filter(p=>p.script.length>=4):specials;
+  const choices=multi.length?multi:specials;
+  const alternate=choices.filter(p=>p.name!==recent.type);
+  const pool=alternate.length?alternate:choices;
+  const pattern=pool[Math.floor(rng()*pool.length)];
+  return buildPattern(x,seconds,speed,pattern,rng,0);
+ }
  // Experimental V0.7 route-first generator, with legacy motifs as safe fallback.
  if(typeof globalThis!=='undefined'&&globalThis.CYBER_RUN_V07_EXPERIMENTAL===true&&rng()<(seconds<10?.34:.73)){
   const composed=composeTrajectorySegment(x,seconds,rng);

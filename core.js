@@ -7,7 +7,7 @@ const GROUND=370,GRAVITY=1900,FIRST_JUMP=690,SECOND_JUMP=640,SPRING_JUMP=930,BAS
 const BODY_W=21,HITBOX_OFFSET_X=6,STAND_H=48,DUCK_H=27,MIN_SECOND_JUMP=.11,DT=1/120;
 // Duck-gate fills the reachable jumping lane but leaves an honest crouch-height opening.
 // Unlike optional bars, its full collision silhouette extends above maximum ground jump.
-const DUCK_GATE_OPENING=28,DUCK_GATE_TOP=GROUND-300;
+const DUCK_GATE_OPENING=28,DUCK_GATE_TOP=GROUND-300,FRAGILE_HOLD=.34,AIR_BOOST_VY=890;
 const PATTERNS=[
  // 'script' records the intended action sequence, not the only valid route.
  {name:'street-pulse',theme:'GROUND FLOW',duration:2.20,weight:4,script:[[.22,'jump'],[1.04,'jump']],hazards:[[.48,'low'],[1.31,'low']]},
@@ -87,7 +87,7 @@ function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
 function intersectsGap(rect,g){return rect.x+rect.w*.77>g.x&&rect.x+rect.w*.23<g.x+g.w}
 function rectAt(x,bottom,duck){const h=duck?DUCK_H:STAND_H;return{x,y:bottom-h+4,w:BODY_W,h:h-7}}
 function hazardAt(h,time){return h.kind==='moving'?{...h,y:GROUND-87+Math.sin(time*3.5+h.phase)*27}:h}
-function makeRunner(x=0){return{x,bottom:GROUND,vy:0,jumps:0,duck:false,support:'ground',coyote:0,jumpBuffer:0,lastJump:-100,hp:3}}
+function makeRunner(x=0){return{x,bottom:GROUND,vy:0,jumps:0,duck:false,support:'ground',coyote:0,jumpBuffer:0,lastJump:-100,hp:3,fragileTimes:Object.create(null),airBoosts:Object.create(null)}}
 function isSupported(state){return state.support!==null}
 function physicsStep(p,dt,x,platforms,gaps,duckHeld,jumpRequested,time,rescue=0,pads=[]){
  const prevBottom=p.bottom,wasSupported=p.support!==null;
@@ -103,6 +103,8 @@ function physicsStep(p,dt,x,platforms,gaps,duckHeld,jumpRequested,time,rescue=0,
  let landing=null;
  if(p.vy>=0){
   for(const platform of platforms){
+   // Fragile catwalks collapse shortly after the first real touchdown.
+   if(platform.kind==='fragile'&&p.fragileTimes[platform.id]!==undefined&&time-p.fragileTimes[platform.id]>=FRAGILE_HOLD)continue;
    // Only collide when descending across the upper face: jump from underneath passes through.
    if(prevBottom<=platform.y+.001&&p.bottom>=platform.y&&x+HITBOX_OFFSET_X+BODY_W*.86>platform.x&&x+HITBOX_OFFSET_X+BODY_W*.14<platform.x+platform.w){
     if(!landing||platform.y<landing.y)landing={y:platform.y,id:platform.id};
@@ -116,9 +118,22 @@ function physicsStep(p,dt,x,platforms,gaps,duckHeld,jumpRequested,time,rescue=0,
  if(landing){
   const spring=landing.id==='ground'&&pads.find(pad=>x+HITBOX_OFFSET_X+BODY_W*.86>pad.x&&x+HITBOX_OFFSET_X+BODY_W*.14<pad.x+pad.w);
   if(spring){p.bottom=GROUND;p.vy=-SPRING_JUMP;p.jumps=1;p.support=null;p.coyote=0;p.duck=false;p.jumpBuffer=0}
-  else {p.bottom=landing.y;p.vy=0;p.jumps=0;p.support=landing.id;p.coyote=.075;p.duck=!!duckHeld; /* Retain a buffered jump through touchdown. */}
+  else {p.bottom=landing.y;p.vy=0;p.jumps=0;p.support=landing.id;p.coyote=.075;p.duck=!!duckHeld; /* Retain a buffered jump through touchdown. */
+   const floor=platforms.find(f=>f.id===landing.id);
+   if(floor?.kind==='fragile'&&p.fragileTimes[landing.id]===undefined)p.fragileTimes[landing.id]=time;
+  }
  }
  else {p.support=null;if(wasSupported&&p.jumps===0)p.coyote=.075;if(p.jumps===0&&p.coyote<=0)p.jumps=1;p.duck=false}
+ // The airborne ring automatically fires once when the runner physically enters it.
+ if(p.support===null){
+  const body=rectAt(x+HITBOX_OFFSET_X,p.bottom,p.duck);
+  for(const pad of pads){
+   if(pad.kind!=='airboost'||p.airBoosts[pad.id])continue;
+   if(overlap(body,{x:pad.x,y:pad.y,w:pad.w,h:pad.h||34})){
+    p.vy=-AIR_BOOST_VY;p.jumps=1;p.airBoosts[pad.id]=true;break;
+   }
+  }
+ }
  return p;
 }
 function buildPattern(x,seconds,speed,pattern,rng,riff=0){
@@ -130,7 +145,7 @@ function buildPattern(x,seconds,speed,pattern,rng,riff=0){
   const rising=Math.min(t,Math.max(0,untilCap));
   return initial*rising+3.75*rising*rising+MAX_SPEED*Math.max(0,t-rising);
  };
- const platforms=(pattern.platforms||[]).map(([a,b,height],i)=>({id:pattern.name+':'+i,x:x+distance(a),w:distance(b-a),y:GROUND-height,kind:'one-way'}));
+ const platforms=(pattern.platforms||[]).map(([a,b,height,kind],i)=>({id:pattern.name+':'+i,x:x+distance(a),w:distance(b-a),y:GROUND-height,kind:kind||'one-way'}));
  // Micro-riffs change the relative timing of existing hazards, not the move script.
  // Variants must be independently certified against the real runner physics.
  const hazards=[];let hazardIndex=0;
@@ -143,8 +158,8 @@ function buildPattern(x,seconds,speed,pattern,rng,riff=0){
    'platform-bar':[65,28,GROUND-(pattern.platforms?.[extra]?.[2]||80)-62]};
   const [w,h,y]=sz[kind];hazards.push({x:x+distance(at+timingShift)-w/2,y,w,h,kind,phase:0});
  }
- const pads=(pattern.pads||[]).map(([at,width],i)=>({id:pattern.name+':spring:'+i,x:x+distance(at)-width/2,w:width,y:GROUND,kind:'spring'}));
- const gaps=(pattern.gaps||[]).map(([at,width])=>({x:x+distance(at)-width/2,w:width}));
+ const pads=(pattern.pads||[]).map(([at,width,height,kind],i)=>({id:pattern.name+':pad:'+i,x:x+distance(at)-width/2,w:width,y:kind==='airboost'?GROUND-height:GROUND,h:kind==='airboost'?34:10,kind:kind||'spring'}));
+ const gaps=(pattern.gaps||[]).map(([at,width,unit])=>{const w=unit==='seconds'?distance(at+width/2)-distance(at-width/2):width;return{x:x+distance(at)-w/2,w}});
  return {type:pattern.name,theme:pattern.theme,x,length:distance(duration),seconds,speed,hazards,gaps,platforms,pads,pickups:[],script:pattern.script,pattern,riff};
 }
 // Replays a desired movement sequence using the SAME physics tick as the game, checking
@@ -366,5 +381,5 @@ function makeSegment(x,seconds,rng,hp,recent={}){
  return segment;
 }
 return {GROUND,GRAVITY,FIRST_JUMP,SECOND_JUMP,SPRING_JUMP,BASE_SPEED,MAX_SPEED,BODY_W,STAND_H,DUCK_H,DT,MIN_SECOND_JUMP,PATTERNS,
- speedAt,timeToTravel,trajectoryTrace,trajectoryComposition,composeTrajectorySegment,DUCK_GATE_TOP,DUCK_GATE_OPENING,randomizer,overlap,intersectsGap,rectAt,hazardAt,makeRunner,isSupported,physicsStep,buildPattern,replayPattern,verifyPattern,makeSegment,HITBOX_OFFSET_X};
+ speedAt,timeToTravel,trajectoryTrace,trajectoryComposition,composeTrajectorySegment,DUCK_GATE_TOP,DUCK_GATE_OPENING,FRAGILE_HOLD,AIR_BOOST_VY,randomizer,overlap,intersectsGap,rectAt,hazardAt,makeRunner,isSupported,physicsStep,buildPattern,replayPattern,verifyPattern,makeSegment,HITBOX_OFFSET_X};
 });

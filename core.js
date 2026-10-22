@@ -271,7 +271,7 @@ function composeTrajectorySegment(x,seconds,rng){
 function makeSegment(x,seconds,rng,hp,recent={}){
  const speed=speedAt(seconds);
  // Experimental V0.7 route-first generator, with legacy motifs as safe fallback.
- if(rng()<(seconds<10?.34:.73)){
+ if(typeof globalThis!=='undefined'&&globalThis.CYBER_RUN_V07_EXPERIMENTAL===true&&rng()<(seconds<10?.34:.73)){
   const composed=composeTrajectorySegment(x,seconds,rng);
   if(composed)return composed;
  }

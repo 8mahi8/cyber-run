@@ -5,12 +5,15 @@
 'use strict';
 const GROUND=370,GRAVITY=1900,FIRST_JUMP=690,SECOND_JUMP=640,SPRING_JUMP=930,BASE_SPEED=400,MAX_SPEED=1150;
 const BODY_W=21,HITBOX_OFFSET_X=6,STAND_H=48,DUCK_H=27,MIN_SECOND_JUMP=.11,DT=1/120;
+// Duck-gate fills the reachable jumping lane but leaves an honest crouch-height opening.
+// Unlike optional bars, its full collision silhouette extends above maximum ground jump.
+const DUCK_GATE_OPENING=28,DUCK_GATE_TOP=GROUND-300;
 const PATTERNS=[
  // 'script' records the intended action sequence, not the only valid route.
  {name:'street-pulse',theme:'GROUND FLOW',duration:2.20,weight:4,script:[[.22,'jump'],[1.04,'jump']],hazards:[[.48,'low'],[1.31,'low']]},
  {name:'duck-switch',theme:'GROUND FLOW',duration:2.17,weight:4,script:[[.23,'jump'],[.87,'duck-on'],[1.50,'duck-off']],hazards:[[.48,'low'],[1.28,'bar']]},
- {name:'reverse-switch',theme:'GROUND FLOW',duration:2.17,weight:4,script:[[.15,'duck-on'],[.62,'duck-off'],[.84,'jump']],hazards:[[.45,'bar'],[1.14,'low']]},
- {name:'tunnel-run',theme:'TUNNEL FLOW',duration:2.28,weight:3,script:[[.14,'duck-on'],[1.15,'duck-off'],[1.26,'jump']],hazards:[[.45,'bar'],[.87,'bar'],[1.60,'low']]},
+ {name:'reverse-switch',theme:'GROUND FLOW',duration:2.17,weight:4,script:[[.15,'duck-on'],[.62,'duck-off'],[.84,'jump']],hazards:[[.45,'duck-gate'],[1.14,'low']]},
+ {name:'tunnel-run',theme:'TUNNEL FLOW',duration:2.28,weight:3,script:[[.14,'duck-on'],[1.15,'duck-off'],[1.26,'jump']],hazards:[[.45,'duck-gate'],[.87,'bar'],[1.60,'low']]},
  {name:'double-boost',theme:'AIR FLOW',duration:2.25,weight:2.5,minTime:5,script:[[.24,'jump'],[.49,'jump']],hazards:[[.83,'tall']]},
  {name:'sky-bridge',theme:'SKY FLOW',duration:2.29,weight:6,minTime:0,script:[[.20,'jump']],platforms:[[.48,1.42,80]],hazards:[[.99,'low'],[1.25,'low']]},
  {name:'sky-crouch',theme:'SKY FLOW',duration:2.35,weight:4.5,minTime:3,script:[[.18,'jump'],[.93,'duck-on'],[1.38,'duck-off']],platforms:[[.45,1.49,77]],hazards:[[1.17,'platform-bar',0],[1.18,'low']]},
@@ -25,19 +28,19 @@ const PATTERNS=[
   script:[[.20,'jump'],[1.04,'jump'],[1.87,'jump']],hazards:[[.45,'low'],[1.31,'low'],[2.15,'low']]},
  {name:'duck-weave',theme:'TUNNEL FLOW',duration:2.96,weight:4.2,minTime:2,
   script:[[.11,'duck-on'],[.57,'duck-off'],[.73,'jump'],[1.48,'duck-on'],[2.12,'duck-off']],
-  hazards:[[.40,'bar'],[1.04,'low'],[1.82,'bar']]},
+  hazards:[[.40,'duck-gate'],[1.04,'low'],[1.82,'bar']]},
  {name:'beam-chase',theme:'TUNNEL FLOW',duration:2.57,weight:3.7,minTime:5,
   script:[[.14,'duck-on'],[1.02,'duck-off'],[1.21,'jump']],
-  hazards:[[.40,'bar'],[.77,'bar'],[1.46,'low']]},
+  hazards:[[.40,'bar'],[.77,'duck-gate'],[1.46,'low']]},
  {name:'platform-weave',theme:'SKY FLOW',duration:2.68,weight:6.3,minTime:2,
   script:[[.18,'jump'],[.91,'duck-on'],[1.36,'duck-off'],[1.66,'jump']],
   platforms:[[.46,1.38,79]],hazards:[[.93,'low'],[1.14,'platform-bar',0],[1.98,'low']]},
  {name:'drop-and-duck',theme:'SKY FLOW',duration:3.05,weight:3.5,minTime:7,
   script:[[.18,'jump'],[1.44,'duck-on'],[1.90,'duck-off'],[2.06,'jump']],
-  platforms:[[.46,1.03,79]],hazards:[[.85,'low'],[1.70,'bar'],[2.33,'low']]},
+  platforms:[[.46,1.03,79]],hazards:[[.85,'low'],[1.70,'duck-gate'],[2.33,'low']]},
  {name:'pulse-drone',theme:'MOTION FLOW',duration:2.81,weight:4.1,minTime:4,
   script:[[.12,'duck-on'],[.75,'duck-off'],[.91,'jump'],[1.70,'duck-on'],[2.23,'duck-off']],
-  hazards:[[.42,'moving'],[1.20,'low'],[2.02,'bar']]},
+  hazards:[[.42,'moving'],[1.20,'low'],[2.02,'duck-gate']]},
  {name:'aerial-surge',theme:'SKY FLOW',duration:2.73,weight:3.8,minTime:10,
   script:[[.17,'jump'],[.98,'jump'],[1.89,'duck-on'],[2.27,'duck-off']],
   platforms:[[.46,1.12,78]],hazards:[[.83,'low'],[1.40,'low'],[2.07,'bar']]},
@@ -136,7 +139,7 @@ function buildPattern(x,seconds,speed,pattern,rng,riff=0){
    riff===2?(hazardIndex%2?.016:-.014):
    riff===3?(hazardIndex%3===0?.024:-.012):0;
   hazardIndex++;
-  const sz={low:[32,36,GROUND-36],bar:[69,29,GROUND-64],tall:[40,158,GROUND-158],moving:[34,28,GROUND-87],
+  const sz={low:[32,36,GROUND-36],bar:[69,29,GROUND-64],'duck-gate':[84,GROUND-DUCK_GATE_OPENING-DUCK_GATE_TOP,DUCK_GATE_TOP],tall:[40,158,GROUND-158],moving:[34,28,GROUND-87],
    'platform-bar':[65,28,GROUND-(pattern.platforms?.[extra]?.[2]||80)-62]};
   const [w,h,y]=sz[kind];hazards.push({x:x+distance(at+timingShift)-w/2,y,w,h,kind,phase:0});
  }
@@ -206,7 +209,7 @@ function trajectoryComposition(seconds,rng){
    want('platform',t+.28,t+1.50,index);
    want('platform-low',t+1.35,t+1.46,index);cursor=t+2.12;
   }else if(name==='slide'){
-   act(t,'duck-on');act(t+.56,'duck-off');want('bar',t+.24,t+.35);cursor=t+.84;
+   act(t,'duck-on');act(t+.56,'duck-off');want('duck-gate',t+.24,t+.35);cursor=t+.84;
   }else if(name==='vault'){
    act(t,'jump');want('low',t+.29,t+.38);cursor=t+.92;
   }else if(name==='double'){
@@ -215,7 +218,7 @@ function trajectoryComposition(seconds,rng){
    act(t,'jump');want('gap',t+.30,t+.42);cursor=t+.92;
   }else if(name==='slide-vault'){
    act(t,'duck-on');act(t+.57,'duck-off');act(t+.79,'jump');
-   want('bar',t+.25,t+.37);want('low',t+1.10,t+1.21);cursor=t+1.69;
+   want('duck-gate',t+.25,t+.37);want('low',t+1.10,t+1.21);cursor=t+1.69;
   }else{
    act(t,'jump');act(t+.94,'duck-on');act(t+1.50,'duck-off');
    want('low',t+.30,t+.38);want('bar',t+1.19,t+1.31);cursor=t+1.77;
@@ -245,7 +248,7 @@ function composeTrajectorySegment(x,seconds,rng){
   if(need.kind==='platform')continue;
   const options=trace.filter(p=>p.t>=need.start&&p.t<=need.end&&(
    need.kind==='platform-low'?p.bottom<=platforms[need.index].y-50:
-   need.kind==='bar'?p.duck:
+   (need.kind==='bar'||need.kind==='duck-gate')?p.duck&&p.support!==null:
    need.kind==='tall'?p.bottom<=GROUND-170:
    need.kind==='gap'?p.bottom<=GROUND-70:p.bottom<=GROUND-65));
   if(!options.length)return null;
@@ -255,7 +258,7 @@ function composeTrajectorySegment(x,seconds,rng){
    gaps.push({x:wx-width/2,w:width});
    pattern.gaps.push([target.t,width]);
   }else{
-   const sizes={low:[32,36,GROUND-36],bar:[69,29,GROUND-64],tall:[40,142,GROUND-142],
+   const sizes={low:[32,36,GROUND-36],bar:[69,29,GROUND-64],'duck-gate':[84,GROUND-DUCK_GATE_OPENING-DUCK_GATE_TOP,DUCK_GATE_TOP],tall:[40,142,GROUND-142],
     'platform-low':[35,28,platforms[need.index]?.y-28]};
    const [w,h,y]=sizes[need.kind];obstacles.push({x:wx-w/2,w,h,y,kind:need.kind,phase:0});
    pattern.hazards.push([target.t,need.kind]);
@@ -310,5 +313,5 @@ function makeSegment(x,seconds,rng,hp,recent={}){
  return segment;
 }
 return {GROUND,GRAVITY,FIRST_JUMP,SECOND_JUMP,SPRING_JUMP,BASE_SPEED,MAX_SPEED,BODY_W,STAND_H,DUCK_H,DT,MIN_SECOND_JUMP,PATTERNS,
- speedAt,timeToTravel,trajectoryTrace,trajectoryComposition,composeTrajectorySegment,randomizer,overlap,intersectsGap,rectAt,hazardAt,makeRunner,isSupported,physicsStep,buildPattern,replayPattern,verifyPattern,makeSegment,HITBOX_OFFSET_X};
+ speedAt,timeToTravel,trajectoryTrace,trajectoryComposition,composeTrajectorySegment,DUCK_GATE_TOP,DUCK_GATE_OPENING,randomizer,overlap,intersectsGap,rectAt,hazardAt,makeRunner,isSupported,physicsStep,buildPattern,replayPattern,verifyPattern,makeSegment,HITBOX_OFFSET_X};
 });

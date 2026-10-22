@@ -44,7 +44,7 @@ const PATTERNS=[
  {name:'spring-overdrive',theme:'BOOST FLOW',duration:2.72,weight:3.8,minTime:6,
   script:[[1.80,'duck-on'],[2.24,'duck-off']],pads:[[.38,46]],hazards:[[.86,'tall'],[2.03,'bar']]},
  {name:'spring-to-sky',theme:'BOOST FLOW',duration:2.81,weight:3.0,minTime:10,
-  script:[[1.30,'duck-on'],[1.69,'duck-off']],pads:[[.31,46]],
+  script:[[1.22,'duck-on'],[1.69,'duck-off']],pads:[[.31,46]],
   platforms:[[.81,1.68,110]],hazards:[[1.48,'platform-bar',0],[1.37,'low']]},
  // Two-height courses are genuinely different traversals: the witnessed path
  // touches BOTH suspended floors, then releases naturally into the next section.
@@ -57,10 +57,10 @@ const PATTERNS=[
   hazards:[[.80,'low'],[1.60,'platform-bar',1],[2.23,'low']]},
  // Higher-distance mastery bursts: several alternating commands in one continuous flow.
  {name:'rhythm-five',theme:'RHYTHM BURST',duration:3.52,weight:4.8,minTime:12,
-  script:[[.18,'jump'],[.90,'duck-on'],[1.23,'duck-off'],[1.36,'jump'],[2.07,'duck-on'],[2.40,'duck-off'],[2.55,'jump']],
+  script:[[.13,'jump'],[.84,'duck-on'],[1.23,'duck-off'],[1.31,'jump'],[2.01,'duck-on'],[2.40,'duck-off'],[2.50,'jump']],
   hazards:[[.43,'low'],[1.07,'bar'],[1.61,'low'],[2.25,'bar'],[2.80,'low']]},
  {name:'overdrive-rhythm',theme:'RHYTHM BURST',duration:4.56,weight:6.0,minTime:40,
-  script:[[.18,'jump'],[.90,'duck-on'],[1.23,'duck-off'],[1.36,'jump'],[2.07,'duck-on'],[2.40,'duck-off'],[2.55,'jump'],[3.27,'duck-on'],[3.60,'duck-off'],[3.73,'jump']],
+  script:[[.13,'jump'],[.84,'duck-on'],[1.23,'duck-off'],[1.31,'jump'],[2.01,'duck-on'],[2.40,'duck-off'],[2.50,'jump'],[3.21,'duck-on'],[3.60,'duck-off'],[3.68,'jump']],
   hazards:[[.43,'low'],[1.07,'bar'],[1.61,'low'],[2.25,'bar'],[2.80,'low'],[3.45,'bar'],[4.00,'low']]},
  // Ascending aerial routes: land on a low platform, jump to a HIGHER one,
  // then exit naturally. The alternate adds a ceiling on the second level.
@@ -68,7 +68,7 @@ const PATTERNS=[
   script:[[.19,'jump'],[.89,'jump']],platforms:[[.46,1.19,75],[1.32,2.10,142]],
   hazards:[[.81,'low'],[1.81,'low']]},
  {name:'sky-ascend-duck',theme:'SKY CLIMB',duration:3.15,weight:3.9,minTime:15,
-  script:[[.19,'jump'],[.89,'jump'],[1.73,'duck-on'],[2.15,'duck-off']],
+  script:[[.19,'jump'],[.89,'jump'],[1.65,'duck-on'],[2.15,'duck-off']],
   platforms:[[.46,1.20,75],[1.32,2.25,142]],
   hazards:[[.81,'low'],[1.91,'platform-bar',1]]},
  {name:'breather',theme:'RECOVERY',duration:1.12,weight:.15,script:[],hazards:[]},

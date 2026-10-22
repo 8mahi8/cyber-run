@@ -152,7 +152,8 @@ function replayPattern(segment,opts={}){
  if(!pattern)return {ok:false,reason:'unknown pattern'};
  const runner=makeRunner(x0);let time=0,covered=0,events=pattern.script||[],next=0,duck=false,steps=0;
  const route=[];
- while(covered<segment.length&&steps++<1000){
+ const maxSteps=Math.max(1000,Math.ceil((pattern.duration||0)/dt)+90);
+ while(covered<segment.length&&steps++<maxSteps){
   let request=false;
   while(next<events.length&&events[next][0]+offset<=time+1e-6){const action=events[next++][1];if(action==='jump')request=true;else if(action==='duck-on')duck=true;else if(action==='duck-off')duck=false}
   covered+=speedAt(initialTime+time)*dt;
@@ -164,7 +165,7 @@ function replayPattern(segment,opts={}){
   if(opts.trace)route.push({time,worldX,bottom:runner.bottom,jumps:runner.jumps,support:runner.support,duck:runner.duck});
   time+=dt;
  }
- if(steps>=1000||runner.support!=='ground'||runner.jumps!==0)return {ok:false,reason:'bad handoff',time,bottom:runner.bottom,support:runner.support};
+ if(steps>=maxSteps||runner.support!=='ground'||runner.jumps!==0)return {ok:false,reason:'bad handoff',time,bottom:runner.bottom,support:runner.support};
  return {ok:true,time,steps,route};
 }
 function verifyPattern(p,seconds,opts={}){
@@ -172,8 +173,108 @@ function verifyPattern(p,seconds,opts={}){
  const offsets=opts.offsets||[0,.025,-.025];
  return offsets.every(offset=>replayPattern(segment,{offset}).ok);
 }
+
+// V0.7 experimental: PLAN CONTROLS -> SIMULATE ACTUAL RUNNER -> PLACE TERRAIN.
+// Legacy motif library remains as a fallback while human-time-jitter QA is expanded.
+function trajectoryTrace(events,duration,seconds,platforms=[]){
+ const p=makeRunner(0),trace=[],dt=DT;let next=0,duck=false;
+ const distance=t=>{const v=speedAt(seconds),cap=(MAX_SPEED-v)/7.5,rise=Math.min(t,Math.max(0,cap));return v*rise+3.75*rise*rise+MAX_SPEED*Math.max(0,t-rise)};
+ for(let frame=0;frame<Math.ceil(duration/dt);frame++){
+  const t=frame*dt;let jump=false;
+  while(next<events.length&&events[next][0]<=t+1e-6){const action=events[next++][1];if(action==='jump')jump=true;else if(action==='duck-on')duck=true;else if(action==='duck-off')duck=false}
+  const x=distance(t+dt);
+  physicsStep(p,dt,x,platforms,[],duck,jump,seconds+t);
+  trace.push({t,x,bottom:p.bottom,duck:p.duck,jumps:p.jumps,support:p.support});
+  if(p.bottom>GROUND+10)return null;
+ }
+ return p.support==='ground'?trace:null;
+}
+function trajectoryComposition(seconds,rng){
+ const moves=['vault','slide','double','gap','slide-vault','vault-slide','sky-line'];
+ const pressure=Math.min(1,seconds/100),count=4+Math.floor(rng()*3)+Math.floor(pressure*2);
+ const script=[],needs=[];let cursor=.18,last='',skyIndex=0;
+ for(let i=0;i<count;i++){
+  let choices=moves.slice();
+  if(seconds<9)choices=choices.filter(v=>v!=='double'&&v!=='sky-line');
+  let name=choices[Math.floor(rng()*choices.length)];
+  if(name===last)name=choices[(choices.indexOf(name)+2)%choices.length];
+  last=name;const t=cursor;
+  const act=(at,action)=>script.push([at,action]);
+  const want=(kind,start,end,index=null)=>needs.push({kind,start,end,index});
+  if(name==='sky-line'){
+   act(t,'jump');act(t+.98,'jump');const index=skyIndex++;
+   want('platform',t+.28,t+1.50,index);
+   want('platform-low',t+1.35,t+1.46,index);cursor=t+2.12;
+  }else if(name==='slide'){
+   act(t,'duck-on');act(t+.56,'duck-off');want('bar',t+.24,t+.35);cursor=t+.84;
+  }else if(name==='vault'){
+   act(t,'jump');want('low',t+.29,t+.38);cursor=t+.92;
+  }else if(name==='double'){
+   act(t,'jump');act(t+.36,'jump');want('tall',t+.69,t+.87);cursor=t+1.58;
+  }else if(name==='gap'){
+   act(t,'jump');want('gap',t+.30,t+.42);cursor=t+.92;
+  }else if(name==='slide-vault'){
+   act(t,'duck-on');act(t+.57,'duck-off');act(t+.79,'jump');
+   want('bar',t+.25,t+.37);want('low',t+1.10,t+1.21);cursor=t+1.69;
+  }else{
+   act(t,'jump');act(t+.94,'duck-on');act(t+1.50,'duck-off');
+   want('low',t+.30,t+.38);want('bar',t+1.19,t+1.31);cursor=t+1.77;
+  }
+ }
+ script.sort((a,b)=>a[0]-b[0]);return {script,needs,duration:cursor+.18,count};
+}
+function composeTrajectorySegment(x,seconds,rng){
+ const plan=trajectoryComposition(seconds,rng);
+ const pilot=trajectoryTrace(plan.script,plan.duration,seconds);
+ if(!pilot)return null;
+ const distance=t=>{const v=speedAt(seconds),cap=(MAX_SPEED-v)/7.5,rise=Math.min(t,Math.max(0,cap));return v*rise+3.75*rise*rise+MAX_SPEED*Math.max(0,t-rise)};
+ const platforms=[];
+ for(const need of plan.needs.filter(n=>n.kind==='platform')){
+  // Derive platform level from the FALLING body's location, not a fixed map row.
+  const ref=pilot.find(p=>p.t>=need.start+.30);if(!ref)return null;
+  const y=Math.round(ref.bottom);
+  if(y>GROUND-55||y<GROUND-150)return null;
+  platforms.push({id:'trace-route:'+platforms.length,x:x+distance(need.start),w:distance(need.end)-distance(need.start),y,kind:'one-way'});
+ }
+ const trace=platforms.length?trajectoryTrace(plan.script,plan.duration,seconds,platforms):pilot;
+ if(!trace)return null;
+ const name='trace-route';
+ const pattern={name,theme:platforms.length?'SKY TRACE':'KINETIC TRACE',duration:plan.duration,weight:1,script:plan.script,hazards:[],gaps:[],platforms:platforms.map(p=>[0,0,GROUND-p.y]),pads:[]};
+ const obstacles=[],gaps=[];
+ for(const need of plan.needs){
+  if(need.kind==='platform')continue;
+  const options=trace.filter(p=>p.t>=need.start&&p.t<=need.end&&(
+   need.kind==='platform-low'?p.bottom<=platforms[need.index].y-50:
+   need.kind==='bar'?p.duck:
+   need.kind==='tall'?p.bottom<=GROUND-170:
+   need.kind==='gap'?p.bottom<=GROUND-70:p.bottom<=GROUND-65));
+  if(!options.length)return null;
+  const target=options[Math.floor(options.length*.48)],wx=x+target.x;
+  if(need.kind==='gap'){
+   const width=44+speedAt(seconds+target.t)*.035;
+   gaps.push({x:wx-width/2,w:width});
+   pattern.gaps.push([target.t,width]);
+  }else{
+   const sizes={low:[32,36,GROUND-36],bar:[69,29,GROUND-64],tall:[40,142,GROUND-142],
+    'platform-low':[35,28,platforms[need.index]?.y-28]};
+   const [w,h,y]=sizes[need.kind];obstacles.push({x:wx-w/2,w,h,y,kind:need.kind,phase:0});
+   pattern.hazards.push([target.t,need.kind]);
+  }
+ }
+ const segment={type:name,theme:pattern.theme,x,length:distance(plan.duration),seconds,speed:speedAt(seconds),hazards:obstacles,gaps,
+  platforms,pads:[],pickups:[],script:plan.script,pattern,riff:0,origin:'trajectory-first',planCount:plan.count};
+ // Reuse actual game physics; do not allow a route with no certified solution.
+ if(![0,-.02,.02,-.04,.04].every(offset=>replayPattern(segment,{offset}).ok))return null;
+ return segment;
+}
+
 function makeSegment(x,seconds,rng,hp,recent={}){
  const speed=speedAt(seconds);
+ // Experimental V0.7 route-first generator, with legacy motifs as safe fallback.
+ if(rng()<(seconds<10?.34:.73)){
+  const composed=composeTrajectorySegment(x,seconds,rng);
+  if(composed)return composed;
+ }
  const allowed=PATTERNS.filter(p=>(p.minTime||0)<=seconds);
  // Recoveries appear intermittently, not repeated at random after every course.
  // Strong anti-repetition without fixing an exact sequence; a smooth pressure curve
@@ -209,5 +310,5 @@ function makeSegment(x,seconds,rng,hp,recent={}){
  return segment;
 }
 return {GROUND,GRAVITY,FIRST_JUMP,SECOND_JUMP,SPRING_JUMP,BASE_SPEED,MAX_SPEED,BODY_W,STAND_H,DUCK_H,DT,MIN_SECOND_JUMP,PATTERNS,
- speedAt,timeToTravel,randomizer,overlap,intersectsGap,rectAt,hazardAt,makeRunner,isSupported,physicsStep,buildPattern,replayPattern,verifyPattern,makeSegment,HITBOX_OFFSET_X};
+ speedAt,timeToTravel,trajectoryTrace,trajectoryComposition,composeTrajectorySegment,randomizer,overlap,intersectsGap,rectAt,hazardAt,makeRunner,isSupported,physicsStep,buildPattern,replayPattern,verifyPattern,makeSegment,HITBOX_OFFSET_X};
 });

@@ -63,3 +63,35 @@ test('trajectory-first action grammar contains both mandatory duck and optional 
  assert.ok(mandatory>90, 'motion-first plan should require duck frequently');
  assert.ok(optional>50, 'motion-first plan must preserve optional alternatives');
 });
+
+test('real course selection requires crouch regularly without eliminating jumpable choices',()=>{
+ let sessionsWithGate=0,mandatory=0,optional=0;
+ for(let seed=1;seed<=200;seed++){
+  let t=0,x=500,rng=C.randomizer(seed),recent={},found=false;
+  while(t<30){
+   const s=C.makeSegment(x,t,rng,3,recent);
+   if(s.hazards.some(h=>h.kind==='duck-gate'))found=true;
+   mandatory+=s.hazards.filter(h=>h.kind==='duck-gate').length;
+   optional+=s.hazards.filter(h=>h.kind==='bar').length;
+   x+=s.length;t+=C.timeToTravel(t,s.length);
+   recent={type:s.type,theme:s.theme,recentTypes:[...(recent.recentTypes||[]),s.type].slice(-3),recentThemes:[...(recent.recentThemes||[]),s.theme].slice(-2)};
+  }
+  sessionsWithGate+=+found;
+ }
+ assert.ok(sessionsWithGate>=190,'too few play sessions meaningfully need a crouch: '+sessionsWithGate);
+ assert.ok(mandatory>=350,'duck-only routes disappeared from course selection: '+mandatory);
+ assert.ok(optional>=350,'free-choice hazards disappeared: '+optional);
+});
+test('motion-first terrain composer actually synthesizes crouch-only gates from selected duck actions',()=>{
+ let built=0,required=0,optional=0;
+ for(let seed=1;seed<=100;seed++){
+  const seg=C.composeTrajectorySegment(350,55,C.randomizer(seed*113));
+  if(!seg)continue;
+  built++;
+  if(seg.hazards.some(h=>h.kind==='duck-gate'))required++;
+  if(seg.hazards.some(h=>h.kind==='bar'))optional++;
+ }
+ assert.ok(built>=40,'motion-first candidate generator rejects too many tracks');
+ assert.ok(required>=25,'required ducks not represented in simulated terrain');
+ assert.ok(optional>=15,'alternative routes not represented in simulated terrain');
+});

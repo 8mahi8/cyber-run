@@ -43,3 +43,12 @@ V0.8の焦点はスピード上限変更やHP削減ではない。**動作選択
 - GitHub Pagesの独立したV0.8試遊URLを作る場合、既存の `index.html` (V0.5)、`playtest-v06/index.html`、`playtest-v07/index.html` および学校Google Sitesへ上書きしない。
 - ランキング仕様 `docs/LEADERBOARD_DESIGN_V1.md` は別作業として維持。Firebase接続は今回行わない。
 - 学校公開はGoogle Sitesへ単一HTML/CSS/JSを直接コード貼り付けする方式。GitHub Pagesはユーザー本人の試遊用である。
+
+
+## V0.8試遊ページ（技術ゲート通過）
+
+- 独立GitHub Pages URL: https://8mahi8.github.io/cyber-run/playtest-v08/
+- mainへ新規追加したパスは `playtest-v08/index.html` のみ（コミット `1285f72315dbdd09e43ebe32b5aa40d3880978dc`）。GitHub Pages配備Actions `39872653327` 成功。
+- **本番トップのV0.5、V0.6/V0.7試遊版、学校のGoogle Sitesは変更していない**。V0.8の表示は単一HTML内にコア/アニメ/ゲームのJavaScriptとCSSを統合している。
+- V0.8のみローカル最高記録キーを `cyber-run-v08-distance-best` に変更し、V0.7試遊時の記録とは混ざらない。
+- ソース開発のDraft PR #3（`dev/challenge-v08`）は引き続き未マージ。最終的な面白さ・難易度は本人の試遊評価で判断する。Firebaseランキングの仕様は引き続き別途設計確定・未実装。

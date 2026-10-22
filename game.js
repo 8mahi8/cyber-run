@@ -179,7 +179,24 @@ function draw(){
  for(const h of hazards){
   if(h.x+h.w<0||h.x>W+100)continue;
   ctx.save();ctx.shadowBlur=7;
-  if(h.kind==='bar'||h.kind==='platform-bar'){
+  if(h.kind==='duck-gate'){
+   // FULL silhouette = FULL collision region, no invisible overhead wall.
+   // The ground-level opening is deliberately large enough for crouching only.
+   ctx.shadowColor='#f079ff';ctx.shadowBlur=12;
+   ctx.fillStyle='#39254e';ctx.fillRect(h.x,h.y,h.w,h.h);
+   ctx.fillStyle='#693b83';ctx.fillRect(h.x+7,h.y+6,h.w-14,h.h-14);
+   ctx.fillStyle='#c581e6';ctx.fillRect(h.x,h.y,h.w,6);
+   for(let k=h.y+15;k<h.y+h.h-17;k+=26){
+    ctx.fillStyle='#b67bce66';ctx.fillRect(h.x+11,k,h.w-22,2);
+   }
+   ctx.fillStyle='#f2a4fc';ctx.fillRect(h.x,h.y+h.h-8,h.w,8);
+   ctx.shadowBlur=0;
+   // Only the cyan-lit low opening is safe; never draw an apparent top shortcut.
+   ctx.strokeStyle='#81ffe5';ctx.lineWidth=3;ctx.beginPath();
+   ctx.moveTo(h.x,h.y+h.h+3);ctx.lineTo(h.x+h.w,h.y+h.h+3);ctx.stroke();
+   ctx.fillStyle='#bbffe6';ctx.font='bold 12px system-ui';ctx.textAlign='center';
+   ctx.fillText('↓',h.x+h.w/2,h.y+h.h-15);
+  }else if(h.kind==='bar'||h.kind==='platform-bar'){
    ctx.shadowColor='#f75fbf';ctx.fillStyle='#a92d86';ctx.fillRect(h.x,h.y,h.w,h.h);
    ctx.fillStyle='#ff99dc';ctx.fillRect(h.x+2,h.y+1,h.w-4,5);
    ctx.fillStyle='#fbe1fb';for(let k=9;k<h.w-4;k+=18)ctx.fillRect(h.x+k,h.y+11,8,3);

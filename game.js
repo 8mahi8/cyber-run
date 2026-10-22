@@ -2,7 +2,7 @@
 const Stick=window.CyberRunStickman;
 const C=window.CyberRunCore,canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false}),$=id=>document.getElementById(id);if(!ctx||!C||!Stick){$('message').textContent='ゲームを初期化できませんでした。';return}
 const ui={overlay:$('overlay'),msg:$('message'),start:$('primary'),score:$('score'),best:$('best'),distance:$('distance'),speed:$('speed'),hearts:$('hearts'),region:$('region'),duck:$('duck'),jump:$('jump')};
-let viewW=960,viewH=540,s=1,dpr=1,ground=C.GROUND,state='menu',runner=null,segments=[],hazards=[],gaps=[],platforms=[],pads=[],pickups=[],seed=0,rng=null,spawnCursor=0,elapsed=0,travel=0,invuln=0,rescue=0,nextFrame=0,lastFrame=0,gameId=0,duckHeld=false,jumpQueued=false,localBest=0,currentRegion='NEON CITY',currentTheme='GROUND FLOW',previousCourse=null,floaters=[],trail=[],hitPulse=0,effects=[],jumpFlash=0,landFlash=0,boostFlash=0,flowFlash=0,cleanFlash=0,lastClean=-100,hudAccumulator=0,lastTheme='GROUND FLOW',gaitPhase=0;
+let viewW=960,viewH=540,s=1,dpr=1,ground=C.GROUND,state='menu',runner=null,segments=[],hazards=[],gaps=[],platforms=[],pads=[],pickups=[],seed=0,rng=null,spawnCursor=0,elapsed=0,travel=0,invuln=0,rescue=0,nextFrame=0,lastFrame=0,gameId=0,duckHeld=false,jumpQueued=false,localBest=0,currentRegion='NEON CITY',currentTheme='GROUND FLOW',previousCourse=null,floaters=[],trail=[],hitPulse=0,effects=[],jumpFlash=0,landFlash=0,boostFlash=0,flowFlash=0,cleanFlash=0,lastClean=-100,hudAccumulator=0,lastTheme='GROUND FLOW',gaitPhase=0,cleanStreak=0,streakFlash=0;
 try{localBest=Number(localStorage.getItem('cyber-run-v06-distance-best'))||0}catch(_){/* storage may be blocked */}
 function resize(){
  const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight);
@@ -41,7 +41,7 @@ function playerRect(){return C.rectAt(runner.x+C.HITBOX_OFFSET_X,runner.bottom,r
 function isOnGround(){return C.isSupported(runner)}
 function jump(){if(state!=='running')return;jumpQueued=true}
 function setDuck(value){if(!runner)return;duckHeld=!!value&&state==='running';runner.duck=duckHeld&&isOnGround()&&runner.jumps===0;ui.duck.classList.toggle('pressed',duckHeld)}
-function start(){gameId++;seed=((Date.now()^Math.floor(performance.now()*10000))>>>0)||1;rng=C.randomizer(seed);runner=makeRunner();segments=[];hazards=[];gaps=[];platforms=[];pads=[];pickups=[];spawnCursor=runner.x+C.speedAt(0)*1.45;elapsed=0;travel=0;invuln=0;rescue=0;duckHeld=false;jumpQueued=false;previousCourse=null;state='running';floaters=[];trail=[];effects=[];jumpFlash=0;landFlash=0;boostFlash=0;flowFlash=0;lastTheme='GROUND FLOW';gaitPhase=0;cleanFlash=0;lastClean=-100;hudAccumulator=0;hitPulse=0;ui.start.textContent='もう一回';ui.overlay.classList.add('hidden');ui.best.textContent='BEST '+localBest.toLocaleString()+' m';lastFrame=performance.now();cancelAnimationFrame(nextFrame);nextFrame=requestAnimationFrame(frame)}
+function start(){gameId++;seed=((Date.now()^Math.floor(performance.now()*10000))>>>0)||1;rng=C.randomizer(seed);runner=makeRunner();segments=[];hazards=[];gaps=[];platforms=[];pads=[];pickups=[];spawnCursor=runner.x+C.speedAt(0)*1.45;elapsed=0;travel=0;invuln=0;rescue=0;duckHeld=false;jumpQueued=false;previousCourse=null;state='running';floaters=[];trail=[];effects=[];jumpFlash=0;landFlash=0;boostFlash=0;flowFlash=0;lastTheme='GROUND FLOW';gaitPhase=0;cleanStreak=0;streakFlash=0;cleanFlash=0;lastClean=-100;hudAccumulator=0;hitPulse=0;ui.start.textContent='もう一回';ui.overlay.classList.add('hidden');ui.best.textContent='BEST '+localBest.toLocaleString()+' m';lastFrame=performance.now();cancelAnimationFrame(nextFrame);nextFrame=requestAnimationFrame(frame)}
 function pause(){if(state==='running'){state='paused';cancelAnimationFrame(nextFrame);nextFrame=0;ui.msg.textContent='一時停止中';ui.start.textContent='再開';ui.overlay.classList.remove('hidden');setDuck(false)}else if(state==='paused'){resume()}}
 function resume(){if(state!=='paused')return;cancelAnimationFrame(nextFrame);nextFrame=0;state='running';ui.overlay.classList.add('hidden');lastFrame=performance.now();nextFrame=requestAnimationFrame(frame)}
 ui.start.addEventListener('click',()=>state==='paused'?resume():start());$('pause').addEventListener('click',pause);
@@ -54,14 +54,14 @@ function createAhead(){let guard=0;while(spawnCursor<viewW+700&&guard++<10){cons
    recentTypes:[...(prior.recentTypes||[]),segment.type].slice(-3),
    recentThemes:[...(prior.recentThemes||[]),segment.theme].slice(-2)};
   segments.push(segment);hazards.push(...segment.hazards);gaps.push(...segment.gaps);pickups.push(...segment.pickups);platforms.push(...segment.platforms);pads.push(...segment.pads)}}
-function hit(){if(invuln>0||state!=='running')return;runner.hp--;invuln=1.35;hitPulse=.32;floaters.push({x:runner.x+16,y:runner.bottom-66,t:0,text:'−1 HP',color:'#ff819d'});if(runner.hp<=0)gameOver()}
+function hit(){if(invuln>0||state!=='running')return;cleanStreak=0;streakFlash=0;runner.hp--;invuln=1.35;hitPulse=.32;floaters.push({x:runner.x+16,y:runner.bottom-66,t:0,text:'−1 HP',color:'#ff819d'});if(runner.hp<=0)gameOver()}
 function gameOver(){state='over';const metres=Math.floor(travel/9),newRecord=metres>localBest;
  if(newRecord){localBest=metres;try{localStorage.setItem('cyber-run-v06-distance-best',String(localBest))}catch(_){}}
  ui.msg.textContent=metres.toLocaleString()+' m 走破'+(newRecord?' — NEW BEST!':'');ui.start.textContent='もう一回';ui.overlay.classList.remove('hidden');setDuck(false)}
 function step(dt){
  for(const f of floaters){f.t+=dt;f.y-=22*dt}floaters=floaters.filter(f=>f.t<.65);
  elapsed+=dt;hitPulse=Math.max(0,hitPulse-dt);invuln=Math.max(0,invuln-dt);rescue=Math.max(0,rescue-dt);
- jumpFlash=Math.max(0,jumpFlash-dt);landFlash=Math.max(0,landFlash-dt);boostFlash=Math.max(0,boostFlash-dt);flowFlash=Math.max(0,flowFlash-dt);cleanFlash=Math.max(0,cleanFlash-dt);
+ jumpFlash=Math.max(0,jumpFlash-dt);landFlash=Math.max(0,landFlash-dt);boostFlash=Math.max(0,boostFlash-dt);flowFlash=Math.max(0,flowFlash-dt);cleanFlash=Math.max(0,cleanFlash-dt);streakFlash=Math.max(0,streakFlash-dt);
  for(const e of effects){e.x+=e.vx*dt;e.y+=e.vy*dt;e.vy+=170*dt;e.life-=dt}
  effects=effects.filter(e=>e.life>0);
  const speed=C.speedAt(elapsed),move=speed*dt;travel+=move;spawnCursor-=move;
@@ -89,12 +89,20 @@ function step(dt){
   }
   if(!h._cleared&&h.x+h.w<body.x){
    h._cleared=true;
+   // A clean-avoid streak is feedback, never score or a gameplay multiplier.
+   if(!h._contacted&&invuln<=0){
+    cleanStreak++;
+    if(cleanStreak>=3&&cleanStreak%3===0){
+     streakFlash=.70;
+     burst(body.x+8,body.y+5,'#adfff0',7,-70,-10);
+    }
+   }
    if(invuln<=0&&Number.isFinite(h.closestClearance)&&h.closestClearance<=24&&elapsed-lastClean>.36){
     cleanFlash=.19;lastClean=elapsed;
     burst(body.x-5,body.y+body.h*.5,'#8ff5fa',5,-115,-6);
    }
   }
-  if(C.overlap(body,collider)){hit();break}
+  if(C.overlap(body,collider)){h._contacted=true;hit();break}
  }
  for(const item of pickups){if(item.taken)continue;const midx=body.x+body.w/2,midy=body.y+body.h/2;
   if(Math.hypot(item.x-midx,item.y-midy)<item.r+17){item.taken=true;runner.hp=Math.min(3,runner.hp+1);floaters.push({x:item.x,y:item.y,t:0,text:'HP +1',color:'#ff819d'})}}
@@ -235,6 +243,13 @@ function draw(){
  }
  for(const f of floaters){ctx.save();ctx.globalAlpha=Math.max(0,1-f.t/.65);ctx.fillStyle=f.color;ctx.font='bold 16px system-ui';ctx.textAlign='center';ctx.fillText(f.text,f.x,f.y);ctx.restore()}
  ctx.restore();
+ // Brief readable celebration above the runner, outside the HUD. Distance-only scoring remains intact.
+ if(runner&&streakFlash>0&&cleanStreak>=3){
+  ctx.save();ctx.globalAlpha=Math.min(1,streakFlash/.26)*.9;
+  ctx.textAlign='right';ctx.font='bold 16px system-ui';ctx.fillStyle='#b4fff2';
+  ctx.fillText('FLOW ×'+cleanStreak,runner.x+14,runner.bottom+cameraY-89);
+  ctx.restore();
+ }
  if(hitPulse>0){ctx.fillStyle='rgba(255,64,107,'+(hitPulse*.28)+')';ctx.fillRect(0,0,W,H)}
  if(cleanFlash>0){ctx.save();ctx.globalAlpha=cleanFlash*.32;ctx.strokeStyle='#62ecff';ctx.lineWidth=2;
   ctx.beginPath();ctx.moveTo(2,ground+cameraY-12);ctx.lineTo(2+(1-cleanFlash/.19)*75,ground+cameraY-12);ctx.stroke();ctx.restore()}

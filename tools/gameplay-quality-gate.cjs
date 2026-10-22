@@ -1,27 +1,59 @@
 #!/usr/bin/env node
-/* Gameplay quality audit: indicators only. Passing cannot replace browser self-play. */
+/* CYBER RUN gameplay quality audit. Run on the development branch before any preview handoff.
+ * The numbers are indicators, never a substitute for browser play and visual judgment.
+ */
 'use strict';
-const C=require('../core.js');
-const SAMPLES=100, WINDOW=30, EARLY=12;
-let total=0,early=0,ground=0,aerial=0,moving=0;
-const kinds={},earlyKinds={},actions={};
-for(let seed=1;seed<=SAMPLES;seed++){
- let t=0,x=450,rng=C.randomizer(seed),recent={};
- while(t<WINDOW){
-  const s=C.makeSegment(x,t,rng,3,recent);
-  if(!s||!Number.isFinite(s.length)||s.length<=0)throw Error('Invalid generated course: '+seed+','+t);
-  const p=s.pattern,isAerial=!!p.platforms?.length,isMoving=!!p.hazards?.some(h=>h[1]==='moving');
-  total++;kinds[s.type]=(kinds[s.type]||0)+1;
-  const key=(isAerial?'AIR':'GROUND')+'|'+p.script.map(i=>i[1]).join('>')+'|'+p.hazards.map(i=>i[1]).join('>');
-  actions[key]=(actions[key]||0)+1;if(isMoving)moving++;
-  if(t<EARLY){early++;earlyKinds[s.type]=(earlyKinds[s.type]||0)+1;if(isAerial)aerial++;else ground++;}
-  t+=p.duration;x+=s.length;recent={type:s.type,theme:s.theme};
- }
+const C = require('../core.js');
+const COUNT = 100;
+const duration = 30;
+const thresholds = { earlyGroundShareMax: .72, earlyAerialShareMin: .28 };
+const aggregate = {
+  earlyTotal: 0, earlyGround: 0, earlyAerial: 0, allTotal: 0,
+  earlyKinds: {}, allKinds: {}, actionSignatures: {}, seenMovingPatterns: 0
+};
+for (let seed = 1; seed <= COUNT; seed++) {
+  let rng=C.randomizer(seed), t=0, x=450, recent={};
+  while(t<duration){
+    const seg=C.makeSegment(x,t,rng,3,recent);
+    if(!seg || !Number.isFinite(seg.length) || seg.length<=0)throw Error('Invalid segment at seed '+seed+', time '+t);
+    const p=seg.pattern;
+    const aerial=!!p.platforms?.length;
+    const moving=!!p.hazards?.some(h=>h[1]==='moving');
+    const signature=(aerial?'PLATFORM':'GROUND')+' '+(p.script||[]).map(a=>a[1]).join('/')+' '+(p.hazards||[]).map(h=>h[1]).join('/');
+    aggregate.allTotal++;
+    aggregate.allKinds[p.name]=(aggregate.allKinds[p.name]||0)+1;
+    aggregate.actionSignatures[signature]=(aggregate.actionSignatures[signature]||0)+1;
+    if (moving) aggregate.seenMovingPatterns++;
+    if(t<12){
+      aggregate.earlyTotal++;
+      aggregate.earlyKinds[p.name]=(aggregate.earlyKinds[p.name]||0)+1;
+      if(aerial)aggregate.earlyAerial++;
+      else aggregate.earlyGround++;
+    }
+    // Estimated course entry time; indicative distribution check, not exact physics proof.
+    t+=p.duration;
+    x+=seg.length;
+    recent={type:seg.type,theme:seg.theme};
+  }
 }
-const groundShare=ground/early,airShare=aerial/early;
+const pct=n=>Math.round(n*1000)/10;
+const metrics={
+  sampledSeeds:COUNT, samplingWindowSeconds:duration, earlyWindowSeconds:12,
+  earlyGroundPercent:pct(aggregate.earlyGround/aggregate.earlyTotal),
+  earlyAerialPercent:pct(aggregate.earlyAerial/aggregate.earlyTotal),
+  differentActionSignatures:Object.keys(aggregate.actionSignatures).length,
+  movingSegmentsIn30s:aggregate.seenMovingPatterns,
+  earlyCourseCounts:aggregate.earlyKinds,
+  allCourseCounts:aggregate.allKinds
+};
 const blockers=[];
-if(groundShare>.75)blockers.push('Early play dominated by ground action');
-if(airShare<.16)blockers.push('Too few aerial sequences in the opening');
-if(!moving)blockers.push('No moving-hazard gameplay in sampled runs');
-const report={status:blockers.length?'NOT READY':'DISTRIBUTION CHECK PASSED',samples:SAMPLES,seconds:WINDOW,earlyWindow:EARLY,earlyGroundPercent:+(groundShare*100).toFixed(1),earlyAerialPercent:+(airShare*100).toFixed(1),movingSegments:moving,actionSignatures:Object.keys(actions).length,earlyCourseCounts:earlyKinds,allCourseCounts:kinds,blockers};
-console.log(JSON.stringify(report,null,2));if(blockers.length)process.exitCode=1;
+const springSegments=(aggregate.allKinds['spring-overdrive']||0)+(aggregate.allKinds['spring-to-sky']||0);
+if(springSegments<20)blockers.push('Spring jumps are rarely generated');
+if(aggregate.earlyGround/aggregate.earlyTotal>thresholds.earlyGroundShareMax)
+  blockers.push('Opening is dominated by ground-only action; improve meaningful early aerial sequences');
+if(aggregate.earlyAerial/aggregate.earlyTotal<thresholds.earlyAerialShareMin)
+  blockers.push('Opening offers too few aerial-action segments');
+if(aggregate.seenMovingPatterns===0)
+  blockers.push('No moving hazards actually appear in sampled runs, despite claims of diverse mechanics');
+console.log(JSON.stringify({status:blockers.length?'NOT READY':'DISTRIBUTION CHECK PASSED',metrics,blockers},null,2));
+if(blockers.length)process.exitCode=1;

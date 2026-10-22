@@ -1,36 +1,35 @@
-# CYBER RUN — prototype v0.3
+# CYBER RUN — high-density runner prototype v0.4
 
-2D horizontal endless runner for school iPad Safari; solo play. This is a development-only prototype. The ranking, account system, and Google Sites distribution are not yet implemented.
+School iPad (landscape Safari), iPhone and PC browser arcade runner. This repository is for a lightweight, no-cost friends-only game. The ranked online leaderboard is **not implemented yet**.
 
-## Controls
-- Tap right / Space / ArrowUp: jump, then tap again for a double jump.
-- Hold left / ArrowDown: crouch. Release to stand. Holding crouch across landing works.
-- Pause button or P/Escape: pause/resume.
+## Try it
 
-## Gameplay
-- HP 3, 1 damage per obstacle or missed small gap, 1.35 seconds of invulnerability.
-- Speed rises continuously with a limit. Score comes from distance and collectibles.
-- Procedural, repeatable-on-seed prebuilt patterns. Segments use a small validated pattern vocabulary, including two-obstacle jump/duck sequences. They maintain minimum time-based reaction spacing as scrolling speed increases.
-- Small gaps only: all can be crossed using one standard jump. No large gaps or split routes.
-- Rare random healing pickup only when injured; no rewards or progression purchases.
-- Cyberpunk visual style. The best score is stored **only on the local device**.
+- GitHub Pages preview: https://8mahi8.github.io/cyber-run/
+- Start: `RUN START`. Jump: right button (tap twice for double jump). Crouch: hold left button. PC: `Space`/`↑` and `↓`. Pause: `Ⅱ` or `P`.
+- 3 HP, accelerated auto-run, checkpoints are not added, rare random recovery hearts only after injury.
 
-## Testing
-Ten Node.js unit and simulated-loop tests pass. Chromium touch/input smoke checks were run at 1024×768, 1194×834, and 844×390, with no page errors; **Safari still requires an actual-device check**.
+## v0.4 changes from v0.3
 
-From the repository root run `node --test tests/*.test.js` (Node.js 20+). This checks generation determinism, speed cap, obstacles, safe gaps, healing constraints, and a simulated browser loop. Tests cannot replace an actual Safari device test.
+- Coins are mainly at **ground-run pickup height**; raised collectibles outline intended jumps.
+- Reworked jump velocity and gravity together; tall blockers require double jumps.
+- **16 curated obstacle patterns** including 2- and 3-obstacle chains, moving elements, small gaps and short coin runs.
+- Speed: starts at 335 game units/s, accelerates by 7.5 units/s² to a cap of 790 units/s (~2.36×). Increased transit streaks, ground pulses and earlier scenery changes.
+- Offline automated solver validates **zero-damage routes** at the **same 120Hz physics cadence as gameplay**, including moving obstacle phases, jump/crouch timing and grounded exits. Runtime uses certified templates without costly per-chunk graph searches.
+- Faster first obstacle appearance and spawn-time speed estimation to minimize future-speed drift.
 
-## Development notes
-- `index.html`: UI structure
-- `style.css`: responsive layout
-- `core.js`: seeded procedural generation and pure geometry helpers
-- `game.js`: browser rendering, physics, input, HUD and game loop
-- `tests/`: Node test runner checks
+## Project layout
 
-No third-party runtime libraries or paid dependencies are required. **Main branch is not modified by this draft PR.**
+- `core.js`: deterministic pattern generator and physics-based reachability proof.
+- `game.js`: rendering, keyboard/pointer controls, local best scores and gameplay.
+- `style.css`: responsive mobile controls and HUD.
+- `index.html`: local development entry point (the public Pages branch has a standalone HTML build).
+- `tests/core.test.js`, `tests/route-replay.test.js`, `tests/browser-smoke.test.js`: Node tests.
 
-### Known limitations / next
-1. Run on school iPad Safari and adjust the jump arc, crouch sensitivity, collisions and frame pacing.
-2. Tune pattern variety and recovery rarity using actual play sessions.
-3. Improve graphics / effects / sound, which are intentionally basic right now.
-4. Discuss online ranking architecture later, separate from core gameplay.
+Run tests with `node --test tests/*.test.js`. No dependencies are required.
+
+## Caveats
+
+- Normal phone/iPad Safari gameplay still needs real-device feedback. Chromium browser smoke checks are not a substitute for iOS Safari.
+- Route certification **proves at least one physically successful input sequence for each template**; it does not guarantee all runs are easy or that a human can always react to every configuration. Collectible recovery arcs are optional guidance rather than mandatory goals.
+- Pairwise segment continuity is protected by a grounded end-state and recovery spacing, but extreme frame drops may make tight combinations harder on slow devices.
+- Do not implement/save scores to an online database until leaderboard rules and free-tier safety are agreed.

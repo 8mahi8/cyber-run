@@ -5,12 +5,12 @@ function replaySequence(patterns,now=0){
  const duration=(distance,t)=>{let d=0,s=0;while(d<distance){d+=C.speedAt(t+s)*dt;s+=dt}return s};
  for(const p of patterns){const seg=C.buildPattern(x,start,C.speedAt(start),p,C.randomizer(1));course.push({seg,start});x+=seg.length;start+=duration(seg.length,start)}
  const actions=course.flatMap(({seg,start})=>seg.script.map(([t,action])=>({at:start+t,action}))).sort((a,b)=>a.at-b.at);
- const hazards=course.flatMap(x=>x.seg.hazards),platforms=course.flatMap(x=>x.seg.platforms),gaps=course.flatMap(x=>x.seg.gaps);
+ const hazards=course.flatMap(x=>x.seg.hazards),platforms=course.flatMap(x=>x.seg.platforms),gaps=course.flatMap(x=>x.seg.gaps),pads=course.flatMap(x=>x.seg.pads);
  const player=C.makeRunner(0);let walk=0,next=0,duck=false;
  for(let frame=0;frame<6500&&walk<x;frame++){
   const t=now+frame*dt;let jump=false;
   while(next<actions.length&&actions[next].at<=t+1e-6){const action=actions[next++].action;if(action==='jump')jump=true;if(action==='duck-on')duck=true;if(action==='duck-off')duck=false}
-  walk+=C.speedAt(t)*dt;C.physicsStep(player,dt,walk,platforms,gaps,duck,jump,t);
+  walk+=C.speedAt(t)*dt;C.physicsStep(player,dt,walk,platforms,gaps,duck,jump,t,0,pads);
   if(player.bottom>C.GROUND+10)return false;
   if(hazards.some(h=>C.overlap(C.rectAt(walk,player.bottom,player.duck),C.hazardAt(h,t))))return false;
  }

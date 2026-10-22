@@ -1,52 +1,28 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>CYBER RUN prototype</title>
-<style>*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#08101f;color:#e7faff;font-family:system-ui;touch-action:none}canvas{display:block;width:100vw;height:100dvh}#hud{position:fixed;top:12px;left:15px;right:15px;display:flex;justify-content:space-between;pointer-events:none;font-weight:800;text-shadow:0 2px 4px #000}#buttons{position:fixed;bottom:18px;left:18px;right:18px;display:flex;justify-content:space-between;pointer-events:none}.btn{pointer-events:auto;touch-action:none;border:2px solid #8ae8ff;background:#153b62dd;color:white;border-radius:20px;width:125px;height:70px;font-weight:800;font-size:20px}#jump{background:#135b85dd}#overlay{position:fixed;inset:0;display:grid;place-items:center;background:#061022b8}#panel{background:#13253c;border:1px solid #58c7eb;border-radius:18px;padding:25px;text-align:center;max-width:340px}#start{font-size:20px;padding:12px 25px;background:#12a9d3;color:white;border:0;border-radius:12px}small{display:block;margin:12px 0;color:#b7d9e7}</style></head>
-<body><canvas id="game"></canvas><div id="hud"><span id="score">SCORE 0</span><span id="hp">♥♥♥</span><span id="speed">×1.0</span></div><div id="buttons"><button class="btn" id="crouch">しゃがむ</button><button class="btn" id="jump">ジャンプ</button></div><div id="overlay"><div id="panel"><h1>CYBER RUN</h1><p id="result">加速する街を駆け抜けろ！</p><small>ジャンプは2回まで / しゃがみは長押し<br>障害物・穴でHP−1。ハートで回復。</small><button id="start">スタート</button></div></div>
-<script>
-(()=>{'use strict';
-const c=document.getElementById('game'),ctx=c.getContext('2d'),ui={score:document.getElementById('score'),hp:document.getElementById('hp'),speed:document.getElementById('speed'),overlay:document.getElementById('overlay'),result:document.getElementById('result')};
-let W=0,H=0,ground=0,scale=1,run=false,player,items=[],hazards=[],gaps=[],dist=0,score=0,elapsed=0,spawnX=0,seed=1,last=0,inv=0,heartCount=0;
-const rnd=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
-function resize(){W=innerWidth;H=innerHeight;scale=Math.max(.75,Math.min(1.5,H/430));ground=H*.72;c.width=Math.round(W*devicePixelRatio);c.height=Math.round(H*devicePixelRatio);ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0)}
-addEventListener('resize',resize);resize();
-function reset(){seed=(Date.now()>>>0)||1;player={x:W*.19,y:ground-43*scale,vy:0,jumps:0,crouch:false,hp:3};items=[];hazards=[];gaps=[];dist=0;score=0;elapsed=0;spawnX=W+120;inv=0;heartCount=0;run=true;ui.overlay.style.display='none';last=performance.now();requestAnimationFrame(frame)}
-function jump(){if(!run)return;if(player.jumps<2){player.vy=-(player.jumps===0?560:510)*scale;player.jumps++}}
-function crouch(v){if(player)player.crouch=v}
-function bind(id,down,up){const b=document.getElementById(id);b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);down()});for(const name of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(name,e=>{e.preventDefault();if(up)up()})}
-bind('jump',jump);bind('crouch',()=>crouch(true),()=>crouch(false));
-addEventListener('keydown',e=>{if(['Space','ArrowUp','ArrowDown'].includes(e.code))e.preventDefault();if(!e.repeat&&(e.code==='Space'||e.code==='ArrowUp'))jump();if(e.code==='ArrowDown')crouch(true)});addEventListener('keyup',e=>{if(e.code==='ArrowDown')crouch(false)});
-document.getElementById('start').onclick=reset;
-function createChunk(speed){const len=(235+rnd()*125)*scale,x=spawnX;const type=rnd();const difficult=elapsed>35;let hazard=null;
-if(type<.19){hazard={x:x+len*.45,w:26*scale,h:30*scale,type:'ground'}}
-else if(type<.36){hazard={x:x+len*.45,w:58*scale,h:18*scale,type:'ceiling'}}
-else if(type<.47&&difficult){hazard={x:x+len*.45,w:29*scale,h:63*scale,type:'tall'}}
-else if(type<.55&&elapsed>65){hazard={x:x+len*.5,w:26*scale,h:26*scale,type:'moving',phase:rnd()*6}}
-else if(type<.61&&elapsed>45){const gapW=Math.min(48*scale,speed*.27);gaps.push({x:x+len*.48,w:gapW})}
-if(hazard)hazards.push(hazard);
-for(let i=0;i<4;i++){if(rnd()<.83){const ix=x+35*scale+i*43*scale;const iy=ground-(hazard&&hazard.type==='ceiling'?17:60+Math.sin(i/3*Math.PI)*30)*scale;items.push({x:ix,y:iy,r:7*scale,kind:'coin',taken:false})}}
-if(elapsed>20&&heartCount<1&&rnd()<.004){items.push({x:x+len*.7,y:ground-65*scale,r:12*scale,kind:'heart',taken:false});heartCount++}
-spawnX+=len;
-}
-function hurt(){if(inv>0)return;player.hp--;inv=1.4;if(player.hp<=0){run=false;ui.result.textContent='スコア '+Math.floor(score).toLocaleString()+' / 距離 '+Math.floor(dist);ui.overlay.style.display='grid'}}
-function frame(now){if(!run)return;const dt=Math.min(.033,(now-last)/1000||0);last=now;elapsed+=dt;inv=Math.max(0,inv-dt);const speed=(205+Math.min(245,elapsed*2.1))*scale;const dx=speed*dt;dist+=dx/scale;score+=dx*.32/scale;
-spawnX-=dx;for(const a of [items,hazards,gaps])for(const o of a)o.x-=dx;
-while(spawnX<W+500*scale)createChunk(speed);
-items=items.filter(o=>o.x>-30&&!o.taken);hazards=hazards.filter(o=>o.x+o.w>-30);gaps=gaps.filter(o=>o.x+o.w>-30);
-const pw=26*scale,ph=(player.crouch&&player.jumps===0?24:43)*scale;let overGap=gaps.some(g=>player.x+pw*.65>g.x&&player.x+pw*.3<g.x+g.w);
-player.vy+=1550*scale*dt;player.y+=player.vy*dt;
-if(player.y+ph>=ground&&!overGap){player.y=ground-ph;player.vy=0;player.jumps=0}
-if(player.y>H+20){hurt();player.y=ground-ph;player.vy=0;player.jumps=0;inv=Math.max(inv,1.4)}
-const box={x:player.x+4*scale,y:player.y+3*scale,w:pw-8*scale,h:ph-4*scale};
-for(const o of hazards){let y=o.type==='ceiling'?ground-67*scale:ground-o.h;if(o.type==='moving')y=ground-42*scale-Math.sin(elapsed*4+o.phase)*30*scale;if(box.x<o.x+o.w&&box.x+box.w>o.x&&box.y<y+o.h&&box.y+box.h>y)hurt()}
-for(const o of items){const px=player.x+pw*.5,py=player.y+ph*.5;if(Math.hypot(o.x-px,o.y-py)<o.r+21*scale){o.taken=true;if(o.kind==='heart')player.hp=Math.min(3,player.hp+1);else score+=100}}
-draw(speed);ui.score.textContent='SCORE '+Math.floor(score).toLocaleString();ui.hp.textContent='♥'.repeat(player.hp)+'♡'.repeat(3-player.hp);ui.speed.textContent='×'+(speed/(205*scale)).toFixed(1);requestAnimationFrame(frame)}
-function draw(speed){ctx.clearRect(0,0,W,H);const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#080e25');bg.addColorStop(1,'#163c57');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
-ctx.fillStyle='#18324f';for(let i=0;i<25;i++){const bw=65*scale,x=((i*99-dist*.18*scale)%(W+150)+(W+150))%(W+150)-60;const bh=(50+(i*47)%110)*scale;ctx.fillRect(x,ground-bh,bw,bh);ctx.fillStyle='#256386';for(let j=0;j<4;j++)ctx.fillRect(x+8*scale,ground-bh+12*j*scale,18*scale,2*scale);ctx.fillStyle='#18324f'}
-ctx.fillStyle='#193149';ctx.fillRect(0,ground,W,H-ground);ctx.fillStyle='#59d7ec';ctx.fillRect(0,ground,W,4*scale);
-for(const g of gaps){ctx.fillStyle='#08101f';ctx.fillRect(g.x,ground-1,g.w,H-ground+2);ctx.fillStyle='#ff6d92';ctx.fillRect(g.x-3,ground,3,7*scale);ctx.fillRect(g.x+g.w,ground,3,7*scale)}
-for(const o of hazards){let y=o.type==='ceiling'?ground-67*scale:ground-o.h;if(o.type==='moving')y=ground-42*scale-Math.sin(elapsed*4+o.phase)*30*scale;ctx.fillStyle=o.type==='ceiling'?'#f2689e':'#ff956e';ctx.fillRect(o.x,y,o.w,o.h);ctx.strokeStyle='#ffd1b0';ctx.strokeRect(o.x,y,o.w,o.h)}
-for(const o of items){ctx.beginPath();ctx.arc(o.x,o.y,o.r,0,Math.PI*2);ctx.fillStyle=o.kind==='heart'?'#ff648f':'#ffd56e';ctx.fill()}
-const ph=(player.crouch&&player.jumps===0?24:43)*scale;ctx.globalAlpha=inv>0&&Math.floor(inv*10)%2===0?.35:1;ctx.fillStyle='#76edc8';ctx.fillRect(player.x,player.y,26*scale,ph);ctx.fillStyle='#0c3349';ctx.fillRect(player.x+17*scale,player.y+8*scale,4*scale,4*scale);ctx.globalAlpha=1;
-ctx.strokeStyle='#51e2ef55';for(let i=0;i<7;i++){const x=((i*140-dist*.8*scale)%W+W)%W;ctx.beginPath();ctx.moveTo(x,ground+20*scale);ctx.lineTo(x-40*scale,ground+20*scale);ctx.stroke()}}
-})();
-</script></body></html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#070d20">
+<title>CYBER RUN — Prototype v0.2</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game" aria-label="CYBER RUN game"></canvas>
+<header id="hud" aria-live="off">
+  <div class="metric"><span>SCORE</span><strong id="score">0</strong><small id="best">BEST 0</small></div>
+  <div class="center-hud"><div id="hearts">♥ ♥ ♥</div><div id="region">NEON CITY</div></div>
+  <div class="metric right"><span>SPEED</span><strong id="speed">1.0×</strong><small id="distance">0 m</small></div>
+</header>
+<div id="controls"><button id="duck" class="control duck" aria-label="しゃがむ">しゃがむ</button><button id="jump" class="control jump" aria-label="ジャンプ">ジャンプ</button></div>
+<button id="pause" aria-label="一時停止">Ⅱ</button>
+<div id="overlay" role="dialog" aria-modal="true"><section id="panel">
+  <div class="eyebrow">ARCADE / PROTOTYPE 0.2</div>
+  <h1>CYBER <em>RUN</em></h1>
+  <p id="message">走るほど加速する街を駆け抜けよう。</p>
+  <p class="hint">ジャンプ：右ボタンを2回までタップ<br>しゃがみ：左ボタンを長押し<br>キーボード：↑ / Space、↓</p>
+  <button id="primary">RUN START</button>
+  <div class="sub">ランキング未実装 ／ 記録はこの端末だけに保存</div>
+</section></div>
+<script src="core.js"></script><script src="game.js"></script>
+</body></html>

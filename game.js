@@ -2,7 +2,7 @@
 const Stick=window.CyberRunStickman;
 const C=window.CyberRunCore,canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false}),$=id=>document.getElementById(id);if(!ctx||!C||!Stick){$('message').textContent='ゲームを初期化できませんでした。';return}
 const ui={overlay:$('overlay'),msg:$('message'),start:$('primary'),score:$('score'),best:$('best'),distance:$('distance'),speed:$('speed'),hearts:$('hearts'),region:$('region'),duck:$('duck'),jump:$('jump')};
-let viewW=960,viewH=540,s=1,dpr=1,ground=C.GROUND,state='menu',runner=null,segments=[],hazards=[],gaps=[],platforms=[],pads=[],pickups=[],seed=0,rng=null,spawnCursor=0,elapsed=0,travel=0,invuln=0,rescue=0,nextFrame=0,lastFrame=0,gameId=0,duckHeld=false,jumpQueued=false,localBest=0,currentRegion='NEON CITY',currentTheme='GROUND FLOW',previousCourse=null,floaters=[],trail=[],hitPulse=0,effects=[],jumpFlash=0,landFlash=0,boostFlash=0,flowFlash=0,cleanFlash=0,lastClean=-100,hudAccumulator=0,lastTheme='GROUND FLOW';
+let viewW=960,viewH=540,s=1,dpr=1,ground=C.GROUND,state='menu',runner=null,segments=[],hazards=[],gaps=[],platforms=[],pads=[],pickups=[],seed=0,rng=null,spawnCursor=0,elapsed=0,travel=0,invuln=0,rescue=0,nextFrame=0,lastFrame=0,gameId=0,duckHeld=false,jumpQueued=false,localBest=0,currentRegion='NEON CITY',currentTheme='GROUND FLOW',previousCourse=null,floaters=[],trail=[],hitPulse=0,effects=[],jumpFlash=0,landFlash=0,boostFlash=0,flowFlash=0,cleanFlash=0,lastClean=-100,hudAccumulator=0,lastTheme='GROUND FLOW',gaitPhase=0;
 try{localBest=Number(localStorage.getItem('cyber-run-v06-distance-best'))||0}catch(_){/* storage may be blocked */}
 function resize(){
  const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight);
@@ -41,7 +41,7 @@ function playerRect(){return C.rectAt(runner.x+C.HITBOX_OFFSET_X,runner.bottom,r
 function isOnGround(){return C.isSupported(runner)}
 function jump(){if(state!=='running')return;jumpQueued=true}
 function setDuck(value){if(!runner)return;duckHeld=!!value&&state==='running';runner.duck=duckHeld&&isOnGround()&&runner.jumps===0;ui.duck.classList.toggle('pressed',duckHeld)}
-function start(){gameId++;seed=((Date.now()^Math.floor(performance.now()*10000))>>>0)||1;rng=C.randomizer(seed);runner=makeRunner();segments=[];hazards=[];gaps=[];platforms=[];pads=[];pickups=[];spawnCursor=runner.x+C.speedAt(0)*1.45;elapsed=0;travel=0;invuln=0;rescue=0;duckHeld=false;jumpQueued=false;previousCourse=null;state='running';floaters=[];trail=[];effects=[];jumpFlash=0;landFlash=0;boostFlash=0;flowFlash=0;lastTheme='GROUND FLOW';cleanFlash=0;lastClean=-100;hudAccumulator=0;hitPulse=0;ui.start.textContent='もう一回';ui.overlay.classList.add('hidden');ui.best.textContent='BEST '+localBest.toLocaleString()+' m';lastFrame=performance.now();cancelAnimationFrame(nextFrame);nextFrame=requestAnimationFrame(frame)}
+function start(){gameId++;seed=((Date.now()^Math.floor(performance.now()*10000))>>>0)||1;rng=C.randomizer(seed);runner=makeRunner();segments=[];hazards=[];gaps=[];platforms=[];pads=[];pickups=[];spawnCursor=runner.x+C.speedAt(0)*1.45;elapsed=0;travel=0;invuln=0;rescue=0;duckHeld=false;jumpQueued=false;previousCourse=null;state='running';floaters=[];trail=[];effects=[];jumpFlash=0;landFlash=0;boostFlash=0;flowFlash=0;lastTheme='GROUND FLOW';gaitPhase=0;cleanFlash=0;lastClean=-100;hudAccumulator=0;hitPulse=0;ui.start.textContent='もう一回';ui.overlay.classList.add('hidden');ui.best.textContent='BEST '+localBest.toLocaleString()+' m';lastFrame=performance.now();cancelAnimationFrame(nextFrame);nextFrame=requestAnimationFrame(frame)}
 function pause(){if(state==='running'){state='paused';cancelAnimationFrame(nextFrame);nextFrame=0;ui.msg.textContent='一時停止中';ui.start.textContent='再開';ui.overlay.classList.remove('hidden');setDuck(false)}else if(state==='paused'){resume()}}
 function resume(){if(state!=='paused')return;cancelAnimationFrame(nextFrame);nextFrame=0;state='running';ui.overlay.classList.add('hidden');lastFrame=performance.now();nextFrame=requestAnimationFrame(frame)}
 ui.start.addEventListener('click',()=>state==='paused'?resume():start());$('pause').addEventListener('click',pause);
@@ -65,6 +65,7 @@ function step(dt){
  for(const e of effects){e.x+=e.vx*dt;e.y+=e.vy*dt;e.vy+=170*dt;e.life-=dt}
  effects=effects.filter(e=>e.life>0);
  const speed=C.speedAt(elapsed),move=speed*dt;travel+=move;spawnCursor-=move;
+ if(runner.support!==null&&!runner.duck)gaitPhase+=(18+17*Math.min(1,(speed-C.BASE_SPEED)/(C.MAX_SPEED-C.BASE_SPEED)))*dt;
  for(const list of [hazards,gaps,pickups,segments,platforms,pads])for(const obj of list)obj.x-=move;
  for(const h of hazards)if(h.kind==='moving')h.y=ground-87+Math.sin(elapsed*3.5+h.phase)*27;
  const before=playerRect(),overHole=gaps.some(g=>C.intersectsGap(before,g));
@@ -222,7 +223,7 @@ function draw(){
    ctx.beginPath();ctx.arc(x+18,bottom-25,24+boostFlash*20,0,Math.PI*2);ctx.stroke()}
   if(!airborne){ctx.fillStyle=landFlash>0?'#c7ffea88':'#2bd5b844';
    ctx.fillRect(x+3,bottom-2,31+landFlash*60,3)}
-  Stick.draw(ctx,x,bottom,{time:elapsed,intensity,duck:crouching,supported:!airborne,
+  Stick.draw(ctx,x,bottom,{time:elapsed,phase:gaitPhase,intensity,duck:crouching,supported:!airborne,
    jumps:runner.jumps,vy:runner.vy,boost:boostFlash>0});
   if(jumpFlash>0){ctx.fillStyle='#b4fff4';ctx.fillRect(x-8,bottom-5,8+jumpFlash*27,3)}
   ctx.restore();

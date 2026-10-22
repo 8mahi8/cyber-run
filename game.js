@@ -165,6 +165,36 @@ function draw(){
   const x=((i*257-t*.93)%(W+250)+(W+250))%(W+250)-120;
   ctx.fillRect(x,ground-145,3,140);}}
 
+ // Horizon scanner: preview REAL obstacle silhouettes rather than telling the
+ // player a button sequence. A high-speed runner can otherwise see too little ahead.
+ if(intensity>.30&&runner&&W>=560){
+  const x0=W*.34,span=W*.32,lineY=ground+51,maxFuture=1.5;
+  const origin=runner.x+C.HITBOX_OFFSET_X+C.BODY_W;
+  const upcoming=[...hazards.map(h=>({x:h.x+h.w/2,kind:h.kind})),...gaps.map(g=>({x:g.x+g.w/2,kind:'gap'}))]
+   .map(h=>({...h,lead:C.timeToTravel(elapsed,Math.max(0,h.x-origin))}))
+   .filter(h=>h.lead>.32&&h.lead<maxFuture).sort((a,b)=>a.lead-b.lead).slice(0,5);
+  ctx.save();ctx.globalAlpha=.42;ctx.strokeStyle='#4be4da';ctx.lineWidth=1.3;
+  ctx.beginPath();ctx.moveTo(x0,lineY);ctx.lineTo(x0+span,lineY);ctx.stroke();
+  ctx.fillStyle='#a6e6e9';ctx.font='10px system-ui';ctx.textAlign='left';ctx.fillText('SCAN',x0,lineY-13);
+  ctx.globalAlpha=.82;
+  for(const h of upcoming){
+   const x=x0+span*h.lead/maxFuture;
+   if(h.kind==='duck-gate'){
+    ctx.fillStyle='#f196f5';ctx.fillRect(x-5,lineY-12,10,9);
+    ctx.fillStyle='#86ffe0';ctx.fillRect(x-5,lineY-1,10,2);
+   }else if(h.kind==='gap'){
+    ctx.fillStyle='#ff839e';ctx.fillRect(x-7,lineY-1,5,3);ctx.fillRect(x+2,lineY-1,5,3);
+   }else if(h.kind==='bar'||h.kind==='platform-bar'){
+    ctx.fillStyle='#f38cdd';ctx.fillRect(x-5,lineY-10,10,4);
+   }else if(h.kind==='moving'){
+    ctx.fillStyle='#ffb477';ctx.fillRect(x-4,lineY-8,8,8);
+   }else{
+    ctx.fillStyle='#ffb477';ctx.fillRect(x-5,lineY-7,10,7);
+   }
+  }
+  ctx.restore();
+ }
+
  for(const g of gaps){ctx.fillStyle='#050a19';ctx.fillRect(g.x,ground-1,g.w,H-ground+2);ctx.fillStyle='#f77c9c';ctx.fillRect(g.x-4,ground-2,4,15);ctx.fillRect(g.x+g.w,ground-2,4,15)}
  // Platforms draw behind obstacles. They only collide with the player on descent.
  for(const pad of pads){ctx.save();ctx.shadowBlur=14;ctx.shadowColor='#ffe36d';

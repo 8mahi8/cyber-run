@@ -1,35 +1,36 @@
-# CYBER RUN — high-density runner prototype v0.4
+# CYBER RUN — prototype v0.5
 
-School iPad (landscape Safari), iPhone and PC browser arcade runner. This repository is for a lightweight, no-cost friends-only game. The ranked online leaderboard is **not implemented yet**.
+無料・ブラウザ完結の高速エンドレスランゲーム。学校iPad Safari（横画面）・スマホ・PC向け。
 
-## Try it
+## 遊び方
 
-- GitHub Pages preview: https://8mahi8.github.io/cyber-run/
-- Start: `RUN START`. Jump: right button (tap twice for double jump). Crouch: hold left button. PC: `Space`/`↑` and `↓`. Pause: `Ⅱ` or `P`.
-- 3 HP, accelerated auto-run, checkpoints are not added, rare random recovery hearts only after injury.
+- 試遊用GitHub Pages: https://8mahi8.github.io/cyber-run/
+- 2段ジャンプ: 右タッチボタン / Space / ↑
+- 長押ししゃがみ: 左タッチボタン / ↓（放すと立つ）
+- 一時停止: Ⅱ / P / Escape
+- HP3、非常に稀なランダム回復ハートあり
+- **走行距離（m）だけがスコア。コイン・加点ボーナスは廃止**
+- BESTはブラウザ内に保存。オンラインランキングは未実装。
 
-## v0.4 changes from v0.3
+## V0.5のマップ生成
 
-- Coins are mainly at **ground-run pickup height**; raised collectibles outline intended jumps.
-- Reworked jump velocity and gravity together; tall blockers require double jumps.
-- **16 curated obstacle patterns** including 2- and 3-obstacle chains, moving elements, small gaps and short coin runs.
-- Speed: starts at 335 game units/s, accelerates by 7.5 units/s² to a cap of 790 units/s (~2.36×). Increased transit streaks, ground pulses and earlier scenery changes.
-- Offline automated solver validates **zero-damage routes** at the **same 120Hz physics cadence as gameplay**, including moving obstacle phases, jump/crouch timing and grounded exits. Runtime uses certified templates without costly per-chunk graph searches.
-- Faster first obstacle appearance and spawn-time speed estimation to minimize future-speed drift.
+1. プレイヤーにさせたい操作（例: ジャンプ→空中足場に着地→しゃがむ→端から自然落下）からコースを設計する。
+2. 13種類の短い操作テーマを、障害物・天井・一方通行の空中足場・小さな穴に変換する。
+3. 開発時に**ゲームと同じ120Hz物理更新**で予定ルートを検証。速度と操作タイミングを変えたテスト、および連結したコースのテストを実行する。
+4. 実行中は検証済みのコースを抽選し、同じテーマが連続しすぎないように調整する。iPad上で高負荷の経路探索は行わない。
+5. 少なくとも1つのノーダメージ攻略ルートを目指すが、別の攻略方法も歓迎。人間の反応時間や実機の快適さは試遊で評価する。
 
-## Project layout
+空中足場は下からジャンプで通り抜け、上に着地可能。端からは自然に落ちる。すり抜け操作は不要。
 
-- `core.js`: deterministic pattern generator and physics-based reachability proof.
-- `game.js`: rendering, keyboard/pointer controls, local best scores and gameplay.
-- `style.css`: responsive mobile controls and HUD.
-- `index.html`: local development entry point (the public Pages branch has a standalone HTML build).
-- `tests/core.test.js`, `tests/route-replay.test.js`, `tests/browser-smoke.test.js`: Node tests.
+## ファイル
 
-Run tests with `node --test tests/*.test.js`. No dependencies are required.
+- index.html / style.css / core.js / game.js: 開発用の分割ソース
+- tests/core.test.js / tests/route-replay.test.js / tests/browser-smoke.test.js: 自動テスト
+- GitHub Pagesはmainにある**外部依存なしの単一HTML**を使用する。
+- 学校Google Sitesの公開版は、URL埋め込みではなくHTML/CSS/JSの**直接貼り付け**が前提。
 
-## Caveats
+## 検証・次の段階
 
-- Normal phone/iPad Safari gameplay still needs real-device feedback. Chromium browser smoke checks are not a substitute for iOS Safari.
-- Route certification **proves at least one physically successful input sequence for each template**; it does not guarantee all runs are easy or that a human can always react to every configuration. Collectible recovery arcs are optional guidance rather than mandatory goals.
-- Pairwise segment continuity is protected by a grounded end-state and recovery spacing, but extreme frame drops may make tight combinations harder on slow devices.
-- Do not implement/save scores to an online database until leaderboard rules and free-tier safety are agreed.
+ローカルのNode.js自動テスト11件成功、Chromiumの横向きスマホ・iPad相当・縦向き画面で描画と操作を確認。**学校iPad実機Safariでの最終試遊は未実施**。
+
+次はV0.6でジャンプ台・予告レーザー・複合コース、V0.7で操作感と描画の磨き込み、V0.8以降にユーザーと相談してオンラインランキングを作る。費用は0円厳守。

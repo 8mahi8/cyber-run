@@ -1,5 +1,6 @@
 (()=>{'use strict';
-const C=window.CyberRunCore,canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false}),$=id=>document.getElementById(id);if(!ctx||!C){$('message').textContent='ゲームを初期化できませんでした。';return}
+const Stick=window.CyberRunStickman;
+const C=window.CyberRunCore,canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false}),$=id=>document.getElementById(id);if(!ctx||!C||!Stick){$('message').textContent='ゲームを初期化できませんでした。';return}
 const ui={overlay:$('overlay'),msg:$('message'),start:$('primary'),score:$('score'),best:$('best'),distance:$('distance'),speed:$('speed'),hearts:$('hearts'),region:$('region'),duck:$('duck'),jump:$('jump')};
 let viewW=960,viewH=540,s=1,dpr=1,ground=C.GROUND,state='menu',runner=null,segments=[],hazards=[],gaps=[],platforms=[],pads=[],pickups=[],seed=0,rng=null,spawnCursor=0,elapsed=0,travel=0,invuln=0,rescue=0,nextFrame=0,lastFrame=0,gameId=0,duckHeld=false,jumpQueued=false,localBest=0,currentRegion='NEON CITY',currentTheme='GROUND FLOW',previousCourse=null,floaters=[],trail=[],hitPulse=0,effects=[],jumpFlash=0,landFlash=0,boostFlash=0,flowFlash=0,cleanFlash=0,lastClean=-100,hudAccumulator=0,lastTheme='GROUND FLOW';
 try{localBest=Number(localStorage.getItem('cyber-run-v06-distance-best'))||0}catch(_){/* storage may be blocked */}
@@ -206,33 +207,24 @@ function draw(){
   ctx.fillRect(item.x-2,item.y-7,4,14);ctx.fillRect(item.x-7,item.y-2,14,4);ctx.restore();
  }
  if(runner){
-  const crouching=runner.duck&&runner.jumps===0,h=crouching?27:48,x=runner.x,y=runner.bottom-h;
-  const airborne=runner.support===null,bright=boostFlash>0?'#fff0a3':'#71fbe4';
-  const stride=Math.sin(elapsed*(23+intensity*20))*4.5;
+  const crouching=runner.duck&&runner.jumps===0,airborne=runner.support===null;
+  const x=runner.x,bottom=runner.bottom;
   ctx.save();ctx.globalAlpha=invuln>0&&Math.floor(invuln*12)%2===0?.40:1;
-  // Camera-only squash/stretch around feet. Physics hitboxes remain unchanged.
+  // Character animation is cosmetic: no influence on collision or physics.
   const compression=Math.min(1,landFlash/.21),stretch=Math.min(1,jumpFlash/.23);
-  const scaleX=1+compression*.13-stretch*.055,scaleY=1-compression*.12+stretch*.11;
-  ctx.translate(x+19,runner.bottom);ctx.scale(scaleX,scaleY);ctx.translate(-x-19,-runner.bottom);
+  const scaleX=1+compression*.12-stretch*.045,scaleY=1-compression*.13+stretch*.09;
+  ctx.translate(x+18,bottom);ctx.scale(scaleX,scaleY);ctx.translate(-x-18,-bottom);
   for(let k=1;k<=3+Math.floor(intensity*3);k++){
    ctx.fillStyle=k%2===0?'#2ec9d578':'#92ffe055';
-   ctx.fillRect(x-k*(13+intensity*5),y+h*.64+k*1.5,11+intensity*10,2);
+   ctx.fillRect(x-k*(13+intensity*5),bottom-(crouching?11:20)+k*1.5,11+intensity*10,2);
   }
-  if(boostFlash>0){ctx.fillStyle='#ffe47f';ctx.globalAlpha*=.8;
-   ctx.beginPath();ctx.arc(x+19,y+h*.53,23+boostFlash*20,0,Math.PI*2);ctx.strokeStyle='#ffe47f';ctx.lineWidth=2.5;ctx.stroke();ctx.globalAlpha=1}
-  if(!airborne){ctx.fillStyle=landFlash>0?'#c7ffea88':'#2bd5b844';ctx.fillRect(x+6,runner.bottom-2,31+landFlash*60,3)}
-  ctx.fillStyle='#156979';ctx.fillRect(x+2,y+Math.min(22,h-8),12,9);
-  ctx.fillStyle='#27c3ae';ctx.fillRect(x+8,y+13,22,h-24);
-  ctx.fillStyle=bright;ctx.fillRect(x+10,y+15,17,h-29);
-  ctx.fillStyle='#39b8a8';ctx.fillRect(x+8,y+1,22,crouching?14:20);
-  ctx.fillStyle='#9bffee';ctx.fillRect(x+10,y+2,17,4);
-  ctx.fillStyle='#0c3351';ctx.fillRect(x+22,y+8,10,8);
-  ctx.fillStyle=boostFlash>0?'#ffefa2':'#dcfff7';ctx.fillRect(x+25,y+9,6,4);
-  if(!crouching){
-   ctx.fillStyle='#5cf0d7';ctx.fillRect(x+9,y+h-9,10,9+(airborne?0:stride));
-   ctx.fillRect(x+22,y+h-9,10,9+(airborne?0:-stride));
-  }else{ctx.fillStyle='#80ffe7';ctx.fillRect(x+13,y+h-7,22,7)}
-  if(jumpFlash>0){ctx.fillStyle='#b4fff4';ctx.fillRect(x-8,y+h-6,8+jumpFlash*27,3)}
+  if(boostFlash>0){ctx.strokeStyle='#ffe47f';ctx.lineWidth=2.5;
+   ctx.beginPath();ctx.arc(x+18,bottom-25,24+boostFlash*20,0,Math.PI*2);ctx.stroke()}
+  if(!airborne){ctx.fillStyle=landFlash>0?'#c7ffea88':'#2bd5b844';
+   ctx.fillRect(x+3,bottom-2,31+landFlash*60,3)}
+  Stick.draw(ctx,x,bottom,{time:elapsed,intensity,duck:crouching,supported:!airborne,
+   jumps:runner.jumps,vy:runner.vy,boost:boostFlash>0});
+  if(jumpFlash>0){ctx.fillStyle='#b4fff4';ctx.fillRect(x-8,bottom-5,8+jumpFlash*27,3)}
   ctx.restore();
  }
  if(flowFlash>0){

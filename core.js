@@ -46,6 +46,15 @@ const PATTERNS=[
  {name:'spring-to-sky',theme:'BOOST FLOW',duration:2.81,weight:3.0,minTime:10,
   script:[[1.30,'duck-on'],[1.69,'duck-off']],pads:[[.31,46]],
   platforms:[[.81,1.68,110]],hazards:[[1.48,'platform-bar',0],[1.37,'low']]},
+ // Two-height courses are genuinely different traversals: the witnessed path
+ // touches BOTH suspended floors, then releases naturally into the next section.
+ {name:'sky-stepdown',theme:'SKY FLOW',duration:2.78,weight:3.0,minTime:8,
+  script:[[.19,'jump'],[1.48,'jump']],platforms:[[.47,1.02,85],[1.12,1.63,45]],
+  hazards:[[.77,'low'],[1.83,'low']]},
+ {name:'sky-stepduck',theme:'SKY FLOW',duration:2.88,weight:2.8,minTime:12,
+  script:[[.19,'jump'],[1.37,'duck-on'],[1.77,'duck-off'],[1.92,'jump']],
+  platforms:[[.46,1.05,80],[1.12,1.88,45]],
+  hazards:[[.80,'low'],[1.60,'platform-bar',1],[2.23,'low']]},
  {name:'breather',theme:'RECOVERY',duration:1.12,weight:.15,script:[],hazards:[]},
 ];
 function speedAt(seconds){return Math.min(MAX_SPEED,BASE_SPEED+Math.max(0,seconds)*7.5)}

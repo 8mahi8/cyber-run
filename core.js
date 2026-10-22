@@ -195,20 +195,30 @@ function trajectoryTrace(events,duration,seconds,platforms=[]){
  return p.support==='ground'?trace:null;
 }
 function trajectoryComposition(seconds,rng){
- const moves=['vault','slide','double','gap','slide-vault','vault-slide','sky-line'];
+ const moves=['vault','slide','double','gap','slide-vault','vault-slide','sky-line','sky-stair'];
  const pressure=Math.min(1,seconds/100),count=4+Math.floor(rng()*3)+Math.floor(pressure*2);
  // Shorter links between distinct actions, not artificially faster jump physics.
  const bridge=seconds>=55?.15:seconds>=20?.055:0;
  const script=[],needs=[];let cursor=.18,last='',skyIndex=0;
  for(let i=0;i<count;i++){
   let choices=moves.slice();
-  if(seconds<9)choices=choices.filter(v=>v!=='double'&&v!=='sky-line');
+  if(seconds<9)choices=choices.filter(v=>v!=='double'&&v!=='sky-line'&&v!=='sky-stair');
+  if(seconds<20)choices=choices.filter(v=>v!=='sky-stair');
   let name=choices[Math.floor(rng()*choices.length)];
   if(name===last)name=choices[(choices.indexOf(name)+2)%choices.length];
   last=name;const t=cursor;
   const act=(at,action)=>script.push([at,action]);
   const want=(kind,start,end,index=null)=>needs.push({kind,start,end,index});
-  if(name==='sky-line'){
+  if(name==='sky-stair'){
+   // Plan actions before terrain: low landing -> jump to high landing ->
+   // crouch under an elevated beam -> fall naturally to ground.
+   act(t,'jump');act(t+.87,'jump');act(t+1.48,'duck-on');act(t+2.06,'duck-off');
+   const first=skyIndex++,second=skyIndex++;
+   want('platform',t+.29,t+1.08,first);
+   want('platform',t+1.24,t+1.93,second);
+   want('platform-bar',t+1.73,t+1.80,second);
+   cursor=t+2.56-bridge;
+  }else if(name==='sky-line'){
    act(t,'jump');act(t+.98,'jump');const index=skyIndex++;
    want('platform',t+.28,t+1.50,index);
    want('platform-low',t+1.35,t+1.46,index);cursor=t+2.12-bridge;
@@ -237,13 +247,17 @@ function composeTrajectoryAttempt(x,seconds,rng){
  const distance=t=>{const v=speedAt(seconds),cap=(MAX_SPEED-v)/7.5,rise=Math.min(t,Math.max(0,cap));return v*rise+3.75*rise*rise+MAX_SPEED*Math.max(0,t-rise)};
  const platforms=[];
  for(const need of plan.needs.filter(n=>n.kind==='platform')){
-  // Derive platform level from the FALLING body's location, not a fixed map row.
-  const ref=pilot.find(p=>p.t>=need.start+.30);if(!ref)return null;
+  // Successive floors are derived from the trace AFTER earlier landings.
+  // The simulation uses segment-local X, terrain uses world X.
+  const staged=platforms.length?
+    trajectoryTrace(plan.script,plan.duration,seconds,platforms.map(p=>({...p,x:p.x-x}))):pilot;
+  if(!staged)return null;
+  const ref=staged.find(p=>p.t>=need.start+.30);if(!ref)return null;
   const y=Math.round(ref.bottom);
   if(y>GROUND-55||y<GROUND-150)return null;
   platforms.push({id:'trace-route:'+platforms.length,x:x+distance(need.start),w:distance(need.end)-distance(need.start),y,kind:'one-way'});
  }
- const trace=platforms.length?trajectoryTrace(plan.script,plan.duration,seconds,platforms):pilot;
+ const trace=platforms.length?trajectoryTrace(plan.script,plan.duration,seconds,platforms.map(p=>({...p,x:p.x-x}))):pilot;
  if(!trace)return null;
  const name='trace-route';
  const pattern={name,theme:platforms.length?'SKY TRACE':'KINETIC TRACE',duration:plan.duration,weight:1,script:plan.script,hazards:[],gaps:[],platforms:platforms.map(p=>[0,0,GROUND-p.y]),pads:[]};
@@ -251,6 +265,7 @@ function composeTrajectoryAttempt(x,seconds,rng){
  for(const need of plan.needs){
   if(need.kind==='platform')continue;
   const options=trace.filter(p=>p.t>=need.start&&p.t<=need.end&&(
+   need.kind==='platform-bar'?p.duck&&p.support===platforms[need.index]?.id:
    need.kind==='platform-low'?p.bottom<=platforms[need.index].y-50:
    (need.kind==='bar'||need.kind==='duck-gate')?p.duck&&p.support!==null:
    need.kind==='tall'?p.bottom<=GROUND-170:
@@ -263,7 +278,8 @@ function composeTrajectoryAttempt(x,seconds,rng){
    pattern.gaps.push([target.t,width]);
   }else{
    const sizes={low:[32,36,GROUND-36],bar:[69,29,GROUND-64],'duck-gate':[84,GROUND-DUCK_GATE_OPENING-DUCK_GATE_TOP,DUCK_GATE_TOP],tall:[40,142,GROUND-142],
-    'platform-low':[35,28,platforms[need.index]?.y-28]};
+    'platform-low':[35,28,platforms[need.index]?.y-28],
+    'platform-bar':[52,28,platforms[need.index]?.y-62]};
    const [w,h,y]=sizes[need.kind];obstacles.push({x:wx-w/2,w,h,y,kind:need.kind,phase:0});
    pattern.hazards.push([target.t,need.kind]);
   }
@@ -272,6 +288,12 @@ function composeTrajectoryAttempt(x,seconds,rng){
   platforms,pads:[],pickups:[],script:plan.script,pattern,riff:0,origin:'trajectory-first',planCount:plan.count};
  // Reuse actual game physics; do not allow a route with no certified solution.
  if(![0,-.02,.02,-.04,.04].every(offset=>replayPattern(segment,{offset}).ok))return null;
+ // No decorative fake platforms: every created floor must actually be landed on.
+ if(platforms.length){
+  const route=replayPattern(segment,{trace:true}).route;
+  const touched=new Set(route.filter(p=>p.support&&p.support!=='ground').map(p=>p.support));
+  if(!platforms.every(p=>touched.has(p.id)))return null;
+ }
  // Denser links must survive independent action timing changes, not only a
  // uniform shift that unrealistically preserves every relative input gap.
  if(seconds>=20){

@@ -199,13 +199,19 @@ function trajectoryComposition(seconds,rng){
  const pressure=Math.min(1,seconds/100),count=4+Math.floor(rng()*3)+Math.floor(pressure*2);
  // Shorter links between distinct actions, not artificially faster jump physics.
  const bridge=seconds>=55?.15:seconds>=20?.055:0;
- const script=[],needs=[];let cursor=.18,last='',skyIndex=0;
+ const script=[],needs=[];let cursor=.18,last='',skyIndex=0,stairCount=0,skyFloorCount=0;
  for(let i=0;i<count;i++){
   let choices=moves.slice();
   if(seconds<9)choices=choices.filter(v=>v!=='double'&&v!=='sky-line'&&v!=='sky-stair');
   if(seconds<20)choices=choices.filter(v=>v!=='sky-stair');
   let name=choices[Math.floor(rng()*choices.length)];
   if(name===last)name=choices[(choices.indexOf(name)+2)%choices.length];
+  // Bound repeated multi-floor height solves. One segment can still contain
+  // a real two-tier stair with a raised crouch, or two simpler sky landings.
+  if(name==='sky-stair'&&stairCount>0)name='slide-vault';
+  if((name==='sky-stair'?2:name==='sky-line'?1:0)+skyFloorCount>2)name='vault-slide';
+  if(name==='sky-stair'){stairCount++;skyFloorCount+=2}
+  else if(name==='sky-line')skyFloorCount++;
   last=name;const t=cursor;
   const act=(at,action)=>script.push([at,action]);
   const want=(kind,start,end,index=null)=>needs.push({kind,start,end,index});

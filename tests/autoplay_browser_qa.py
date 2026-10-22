@@ -22,7 +22,7 @@ needle2=' draw();ui.best.textContent='
 assert game.count(needle2)==1
 game=game.replace(needle2, ''' window.__qa={advance(seconds){cancelAnimationFrame(nextFrame);const limit=Math.round(seconds/C.DT);for(let i=0;i<limit&&state==='running';i++)step(C.DT);draw();return {elapsed,travel:Math.floor(travel/9),hp:runner.hp,state,speed:C.speedAt(elapsed),support:runner.support,bottom:runner.bottom,segments:segments.map(s=>s.type).slice(0,3)}},screen(){draw()}};
  draw();ui.best.textContent=''' )
-html=html.replace('<link rel="stylesheet" href="style.css">','<style>'+css+'</style>').replace('<script src="core.js"></script><script src="game.js"></script>','<script>'+core+'</script><script>'+game+'</script>')
+html=html.replace('<link rel="stylesheet" href="style.css">','<style>'+css+'</style>').replace('<script src="core.js"></script><script src="stickman.js"></script><script src="game.js"></script>','<script>'+core+'</script><script>'+(R/'stickman.js').read_text()+'</script><script>'+game+'</script>')
 (R/'qa-autoplay.html').write_text(html)
 with sync_playwright() as p:
  browser=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox','--disable-dev-shm-usage'])

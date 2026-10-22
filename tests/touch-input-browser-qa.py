@@ -8,7 +8,7 @@ tag=' draw();ui.best.textContent='
 assert game.count(tag)==1
 game=game.replace(tag," window.__qaRead=()=>({state,elapsed,runner:{...runner},duckHeld,viewW});\n"+tag)
 page_html=page_html.replace('<link rel="stylesheet" href="style.css">','<style>'+(R/'style.css').read_text(encoding='utf-8')+'</style>')
-page_html=page_html.replace('<script src="core.js"></script><script src="game.js"></script>','<script>'+(R/'core.js').read_text(encoding='utf-8')+'</script><script>'+game+'</script>')
+page_html=page_html.replace('<script src="core.js"></script><script src="stickman.js"></script><script src="game.js"></script>','<script>'+(R/'core.js').read_text(encoding='utf-8')+'</script><script>'+(R/'stickman.js').read_text(encoding='utf-8')+'</script><script>'+game+'</script>')
 with sync_playwright() as p:
  b=p.chromium.launch(headless=True,args=['--no-sandbox','--disable-dev-shm-usage'])
  errors=[]

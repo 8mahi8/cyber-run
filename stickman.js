@@ -20,24 +20,27 @@
     // Time is a fallback for independent animation preview and test harnesses.
     const running=supported,gaitPhase=Number.isFinite(phase)?phase:time*(19+11*Math.min(1,Math.max(0,intensity)));
     const s=Math.sin(gaitPhase),c=Math.cos(gaitPhase);
-    const lean=running?1.3+intensity*3.1:vy<0?1:0;
-    const bounce=running?Math.abs(c)*.95:0;
+    const lean=running?1.3+intensity*2.5:vy<0?1:0;
+    // One foot plants while the other swings, instead of two free-spinning legs.
+    const bounce=running?(1.0+intensity)*Math.pow(Math.sin(gaitPhase),2):0;
     const head=point(lean+1,-40+bounce),shoulder=point(lean,-30+bounce),hip=point(-1,-18+bounce);
     let arms,legs,type;
     if(running){
       type='run';
-      const reach=8+4*intensity;
-      const swing=reach*s;
-      const lift=4+2*intensity;
-      const rightFoot=point(9*s,-1-Math.max(0,s)*lift);
-      const leftFoot=point(-9*s,-1-Math.max(0,-s)*lift);
+      const stride=17+intensity*5, duty=.47-intensity*.04, lift=9+intensity*4;
+      const smooth=u=>u*u*(3-2*u);
+      function foot(phaseOffset){
+        const u=((gaitPhase/6.283185307179586+phaseOffset)%1+1)%1;
+        if(u<duty)return point(stride*(.5-u/duty),-1);
+        const w=(u-duty)/(1-duty);
+        return point(stride*(-.5+smooth(w)),-1-lift*Math.sin(Math.PI*w));
+      }
+      const nearFoot=foot(0),farFoot=foot(.5);
+      const knee=(end,bend)=>point(hip.x+(end.x-hip.x)*.52+bend,-10+(end.y+1)*.22);
+      legs=[[hip,knee(nearFoot,3),nearFoot],[hip,knee(farFoot,-2),farFoot]];
       arms=[
-        [point(shoulder.x-2,shoulder.y),point(-5-swing*.7,-23),point(-6-swing,-17+Math.max(0,s)*3)],
-        [point(shoulder.x+2,shoulder.y),point(6+swing*.7,-24),point(6+swing,-15+Math.max(0,-s)*3)]
-      ];
-      legs=[
-        [hip,point(3+rightFoot.x*.65,-11-Math.max(0,s)*3),rightFoot],
-        [hip,point(-3+leftFoot.x*.65,-11-Math.max(0,-s)*3),leftFoot]
+        [point(shoulder.x-2,shoulder.y),point(-4-nearFoot.x*.50,-24),point(-5-nearFoot.x*.67,-18)],
+        [point(shoulder.x+2,shoulder.y),point(4-farFoot.x*.50,-24),point(6-farFoot.x*.67,-18)]
       ];
     }else if(boost || jumps>=2){
       type='double';

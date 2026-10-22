@@ -36,7 +36,7 @@ function burst(x,y,color,count,vx,vy){
 }
 
 function makeRunner(){return C.makeRunner(Math.max(86,viewW*.19)+6)}
-function playerRect(){return C.rectAt(runner.x+6,runner.bottom,runner.duck)}
+function playerRect(){return C.rectAt(runner.x+C.HITBOX_OFFSET_X,runner.bottom,runner.duck)}
 function isOnGround(){return C.isSupported(runner)}
 function jump(){if(state!=='running')return;jumpQueued=true}
 function setDuck(value){if(!runner)return;duckHeld=!!value&&state==='running';runner.duck=duckHeld&&isOnGround()&&runner.jumps===0;ui.duck.classList.toggle('pressed',duckHeld)}
@@ -47,7 +47,7 @@ ui.start.addEventListener('click',()=>state==='paused'?resume():start());$('paus
 function bind(button,down,up){button.addEventListener('pointerdown',e=>{e.preventDefault();try{button.setPointerCapture(e.pointerId)}catch(_){}button.classList.add('pressed');down()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>button.addEventListener(type,e=>{e.preventDefault();button.classList.remove('pressed');if(up)up()}))}
 bind(ui.jump,jump);bind(ui.duck,()=>setDuck(true),()=>setDuck(false));
 const keys=new Set();addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();if(keys.has(e.code))return;keys.add(e.code);if(['ArrowUp','Space'].includes(e.code))jump();if(e.code==='ArrowDown')setDuck(true);if(e.code==='Escape'||e.code==='KeyP')pause()});addEventListener('keyup',e=>{keys.delete(e.code);if(e.code==='ArrowDown')setDuck(false)});addEventListener('blur',()=>{keys.clear();if(state==='running')pause()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='running')pause()});addEventListener('contextmenu',e=>e.preventDefault());
-function createAhead(){let guard=0;while(spawnCursor<viewW+700&&guard++<10){const eta=C.timeToTravel(elapsed,Math.max(0,spawnCursor-(runner.x+6)));const segment=C.makeSegment(spawnCursor,elapsed+eta,rng,runner.hp,previousCourse||{});spawnCursor+=segment.length;previousCourse={type:segment.type,theme:segment.theme};segments.push(segment);hazards.push(...segment.hazards);gaps.push(...segment.gaps);pickups.push(...segment.pickups);platforms.push(...segment.platforms);pads.push(...segment.pads)}}
+function createAhead(){let guard=0;while(spawnCursor<viewW+700&&guard++<10){const eta=C.timeToTravel(elapsed,Math.max(0,spawnCursor-(runner.x+C.HITBOX_OFFSET_X)));const segment=C.makeSegment(spawnCursor,elapsed+eta,rng,runner.hp,previousCourse||{});spawnCursor+=segment.length;previousCourse={type:segment.type,theme:segment.theme};segments.push(segment);hazards.push(...segment.hazards);gaps.push(...segment.gaps);pickups.push(...segment.pickups);platforms.push(...segment.platforms);pads.push(...segment.pads)}}
 function hit(){if(invuln>0||state!=='running')return;runner.hp--;invuln=1.35;hitPulse=.32;floaters.push({x:runner.x+16,y:runner.bottom-66,t:0,text:'−1 HP',color:'#ff819d'});if(runner.hp<=0)gameOver()}
 function gameOver(){state='over';const metres=Math.floor(travel/9),newRecord=metres>localBest;
  if(newRecord){localBest=metres;try{localStorage.setItem('cyber-run-v06-distance-best',String(localBest))}catch(_){}}
@@ -78,7 +78,7 @@ function step(dt){
  hazards=hazards.filter(h=>h.x+h.w>-40);gaps=gaps.filter(g=>g.x+g.w>-40);pickups=pickups.filter(item=>!item.taken&&item.x>-40);
  platforms=platforms.filter(p=>p.x+p.w>-40);pads=pads.filter(p=>p.x+p.w>-40);segments=segments.filter(a=>a.x+a.length>-40);
  createAhead();currentRegion=elapsed<22?'NEON CITY':elapsed<48?'MACHINE DISTRICT':'ENERGY TUNNEL';
- const upcoming=segments.find(a=>a.x+a.length>runner.x+6);
+ const upcoming=segments.find(a=>a.x+a.length>runner.x+C.HITBOX_OFFSET_X);
  if(upcoming){currentTheme=upcoming.theme;if(currentTheme!==lastTheme){flowFlash=.60;lastTheme=currentTheme}}
  ui.region.textContent=currentRegion;ui.score.textContent=Math.floor(travel/9).toLocaleString()+' m';ui.hearts.textContent='♥ '.repeat(runner.hp)+'♡ '.repeat(3-runner.hp);
  ui.speed.textContent=(speed/C.BASE_SPEED).toFixed(1)+'×';ui.distance.textContent=currentTheme;

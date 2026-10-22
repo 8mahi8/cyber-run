@@ -8,9 +8,13 @@ test('experimental composer plans character actions before it derives collision 
    const built=C.composeTrajectorySegment(1000,time,rng);
    if(!built){rejected++;continue} // Invalid movement scripts must be safely rejected.
    assert.equal(built.origin,'trajectory-first');
-   assert.equal(built.hazards.length+built.gaps.length,planned.needs.filter(x=>x.kind!=='platform').length);
-   assert.equal(built.platforms.length,planned.needs.filter(x=>x.kind==='platform').length);
-   assert.equal(built.script.length,planned.script.length);
+   // A rejected first plan may be retried, so compare against the accepted
+   // route's own action-first blueprint, not the first random draft.
+   assert.equal(built.script.length,built.pattern.script.length);
+   assert.ok(built.script.length>=built.planCount,'each move contributes an input');
+   assert.equal(built.hazards.length+built.gaps.length,built.pattern.hazards.length+built.pattern.gaps.length);
+   assert.equal(built.platforms.length,built.pattern.platforms.length);
+   assert.ok(built.pattern.duration>0&&built.length>0);
    assert.ok(C.replayPattern(built).ok,'planned runner cannot complete synthesized geometry');
    assert.ok(built.hazards.every(h=>Number.isFinite(h.x)&&Number.isFinite(h.y)));
    assert.ok(built.gaps.every(g=>g.w>0&&Number.isFinite(g.x)));

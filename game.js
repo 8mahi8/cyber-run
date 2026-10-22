@@ -1,20 +1,22 @@
 (()=>{'use strict';
 const C=window.CyberRunCore,canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false}),$=id=>document.getElementById(id);if(!ctx||!C){$('message').textContent='ゲームを初期化できませんでした。';return}
 const ui={overlay:$('overlay'),msg:$('message'),start:$('primary'),score:$('score'),best:$('best'),distance:$('distance'),speed:$('speed'),hearts:$('hearts'),region:$('region'),duck:$('duck'),jump:$('jump')};
-let viewW=960,viewH=540,s=1,dpr=1,ground=C.GROUND,state='menu',runner=null,segments=[],hazards=[],gaps=[],platforms=[],pickups=[],seed=0,rng=null,spawnCursor=0,elapsed=0,travel=0,invuln=0,rescue=0,nextFrame=0,lastFrame=0,gameId=0,duckHeld=false,jumpQueued=false,localBest=0,currentRegion='NEON CITY',currentTheme='GROUND FLOW',previousCourse=null,floaters=[],trail=[],hitPulse=0;
-try{localBest=Number(localStorage.getItem('cyber-run-v05-distance-best'))||0}catch(_){/* storage may be blocked */}
+let viewW=960,viewH=540,s=1,dpr=1,ground=C.GROUND,state='menu',runner=null,segments=[],hazards=[],gaps=[],platforms=[],pads=[],pickups=[],seed=0,rng=null,spawnCursor=0,elapsed=0,travel=0,invuln=0,rescue=0,nextFrame=0,lastFrame=0,gameId=0,duckHeld=false,jumpQueued=false,localBest=0,currentRegion='NEON CITY',currentTheme='GROUND FLOW',previousCourse=null,floaters=[],trail=[],hitPulse=0;
+try{localBest=Number(localStorage.getItem('cyber-run-v06-distance-best'))||0}catch(_){/* storage may be blocked */}
 function resize(){
  const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight);
- s=h/viewH;viewW=w/s;dpr=Math.min(2,devicePixelRatio||1);
+ // Give iPad-like landscape screens a wider preview window at high speed.
+ s=w/h>1.10?Math.min(h/540,w/920):h/540;viewW=w/s;viewH=h/s;dpr=Math.min(2,devicePixelRatio||1);
  canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
  ctx.setTransform(dpr*s,0,0,dpr*s,0,0);ctx.imageSmoothingEnabled=true;
- // On phone rotation keep the runner visible and preserve relative obstacle distances.
+ // Keep the runner visible when a phone rotates mid-run. Shift all world objects
+ // with the anchored runner so collision distances do not change on resize.
  if(runner){
   const safeX=Math.min(Math.max(86,viewW*.19)+6,Math.max(12,viewW-40));
   const shift=safeX-runner.x;
   if(shift!==0){
    runner.x=safeX;spawnCursor+=shift;
-   for(const list of [segments,hazards,gaps,platforms,pickups,floaters])
+   for(const list of [segments,hazards,gaps,platforms,pads,pickups,floaters])
     for(const entity of list)entity.x+=shift;
   }
  }
@@ -25,28 +27,28 @@ function playerRect(){return C.rectAt(runner.x+6,runner.bottom,runner.duck)}
 function isOnGround(){return C.isSupported(runner)}
 function jump(){if(state!=='running')return;jumpQueued=true}
 function setDuck(value){if(!runner)return;duckHeld=!!value&&state==='running';runner.duck=duckHeld&&isOnGround()&&runner.jumps===0;ui.duck.classList.toggle('pressed',duckHeld)}
-function start(){gameId++;seed=((Date.now()^Math.floor(performance.now()*10000))>>>0)||1;rng=C.randomizer(seed);runner=makeRunner();segments=[];hazards=[];gaps=[];platforms=[];pickups=[];spawnCursor=runner.x+C.speedAt(0)*1.45;elapsed=0;travel=0;invuln=0;rescue=0;duckHeld=false;jumpQueued=false;previousCourse=null;state='running';floaters=[];trail=[];hitPulse=0;ui.start.textContent='もう一回';ui.overlay.classList.add('hidden');ui.best.textContent='BEST '+localBest.toLocaleString()+' m';lastFrame=performance.now();cancelAnimationFrame(nextFrame);nextFrame=requestAnimationFrame(frame)}
+function start(){gameId++;seed=((Date.now()^Math.floor(performance.now()*10000))>>>0)||1;rng=C.randomizer(seed);runner=makeRunner();segments=[];hazards=[];gaps=[];platforms=[];pads=[];pickups=[];spawnCursor=runner.x+C.speedAt(0)*1.45;elapsed=0;travel=0;invuln=0;rescue=0;duckHeld=false;jumpQueued=false;previousCourse=null;state='running';floaters=[];trail=[];hitPulse=0;ui.start.textContent='もう一回';ui.overlay.classList.add('hidden');ui.best.textContent='BEST '+localBest.toLocaleString()+' m';lastFrame=performance.now();cancelAnimationFrame(nextFrame);nextFrame=requestAnimationFrame(frame)}
 function pause(){if(state==='running'){state='paused';cancelAnimationFrame(nextFrame);nextFrame=0;ui.msg.textContent='一時停止中';ui.start.textContent='再開';ui.overlay.classList.remove('hidden');setDuck(false)}else if(state==='paused'){resume()}}
 function resume(){if(state!=='paused')return;cancelAnimationFrame(nextFrame);nextFrame=0;state='running';ui.overlay.classList.add('hidden');lastFrame=performance.now();nextFrame=requestAnimationFrame(frame)}
 ui.start.addEventListener('click',()=>state==='paused'?resume():start());$('pause').addEventListener('click',pause);
 function bind(button,down,up){button.addEventListener('pointerdown',e=>{e.preventDefault();try{button.setPointerCapture(e.pointerId)}catch(_){}button.classList.add('pressed');down()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>button.addEventListener(type,e=>{e.preventDefault();button.classList.remove('pressed');if(up)up()}))}
 bind(ui.jump,jump);bind(ui.duck,()=>setDuck(true),()=>setDuck(false));
 const keys=new Set();addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();if(keys.has(e.code))return;keys.add(e.code);if(['ArrowUp','Space'].includes(e.code))jump();if(e.code==='ArrowDown')setDuck(true);if(e.code==='Escape'||e.code==='KeyP')pause()});addEventListener('keyup',e=>{keys.delete(e.code);if(e.code==='ArrowDown')setDuck(false)});addEventListener('blur',()=>{keys.clear();if(state==='running')pause()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='running')pause()});addEventListener('contextmenu',e=>e.preventDefault());
-function createAhead(){let guard=0;while(spawnCursor<viewW+700&&guard++<10){const eta=Math.max(0,(spawnCursor-(runner.x+6))/C.speedAt(elapsed));const segment=C.makeSegment(spawnCursor,elapsed+eta,rng,runner.hp,previousCourse||{});spawnCursor+=segment.length;previousCourse={type:segment.type,theme:segment.theme};segments.push(segment);hazards.push(...segment.hazards);gaps.push(...segment.gaps);pickups.push(...segment.pickups);platforms.push(...segment.platforms)}}
+function createAhead(){let guard=0;while(spawnCursor<viewW+700&&guard++<10){const eta=C.timeToTravel(elapsed,Math.max(0,spawnCursor-(runner.x+6)));const segment=C.makeSegment(spawnCursor,elapsed+eta,rng,runner.hp,previousCourse||{});spawnCursor+=segment.length;previousCourse={type:segment.type,theme:segment.theme};segments.push(segment);hazards.push(...segment.hazards);gaps.push(...segment.gaps);pickups.push(...segment.pickups);platforms.push(...segment.platforms);pads.push(...segment.pads)}}
 function hit(){if(invuln>0||state!=='running')return;runner.hp--;invuln=1.35;hitPulse=.32;floaters.push({x:runner.x+16,y:runner.bottom-66,t:0,text:'−1 HP',color:'#ff819d'});if(runner.hp<=0)gameOver()}
 function gameOver(){state='over';const metres=Math.floor(travel/9),newRecord=metres>localBest;
- if(newRecord){localBest=metres;try{localStorage.setItem('cyber-run-v05-distance-best',String(localBest))}catch(_){}}
+ if(newRecord){localBest=metres;try{localStorage.setItem('cyber-run-v06-distance-best',String(localBest))}catch(_){}}
  ui.msg.textContent=metres.toLocaleString()+' m 走破'+(newRecord?' — NEW BEST!':'');ui.start.textContent='もう一回';ui.overlay.classList.remove('hidden');setDuck(false)}
 function step(dt){
  for(const f of floaters){f.t+=dt;f.y-=22*dt}floaters=floaters.filter(f=>f.t<.65);
  elapsed+=dt;hitPulse=Math.max(0,hitPulse-dt);invuln=Math.max(0,invuln-dt);rescue=Math.max(0,rescue-dt);
  const speed=C.speedAt(elapsed),move=speed*dt;travel+=move;spawnCursor-=move;
- for(const list of [hazards,gaps,pickups,segments,platforms])for(const obj of list)obj.x-=move;
+ for(const list of [hazards,gaps,pickups,segments,platforms,pads])for(const obj of list)obj.x-=move;
  for(const h of hazards)if(h.kind==='moving')h.y=ground-87+Math.sin(elapsed*3.5+h.phase)*27;
  const before=playerRect(),overHole=gaps.some(g=>C.intersectsGap(before,g));
  if(overHole&&runner.support==='ground'&&rescue<=0){hit();rescue=1.0}
- // Screen-space runner stays anchored; the scenery scrolls instead.
- C.physicsStep(runner,dt,runner.x,platforms,gaps,duckHeld,jumpQueued,elapsed,rescue);
+ // Keep the runner anchored at its screen x; world elements scroll left.
+ C.physicsStep(runner,dt,runner.x,platforms,gaps,duckHeld,jumpQueued,elapsed,rescue,pads);
  jumpQueued=false;
  if(runner.bottom>ground+112){hit();runner.bottom=ground;runner.vy=0;runner.jumps=0;runner.support='ground';rescue=1.0;invuln=Math.max(invuln,1.4)}
  const body=playerRect();
@@ -54,7 +56,7 @@ function step(dt){
  for(const item of pickups){if(item.taken)continue;const midx=body.x+body.w/2,midy=body.y+body.h/2;
   if(Math.hypot(item.x-midx,item.y-midy)<item.r+17){item.taken=true;runner.hp=Math.min(3,runner.hp+1);floaters.push({x:item.x,y:item.y,t:0,text:'HP +1',color:'#ff819d'})}}
  hazards=hazards.filter(h=>h.x+h.w>-40);gaps=gaps.filter(g=>g.x+g.w>-40);pickups=pickups.filter(item=>!item.taken&&item.x>-40);
- platforms=platforms.filter(p=>p.x+p.w>-40);segments=segments.filter(a=>a.x+a.length>-40);
+ platforms=platforms.filter(p=>p.x+p.w>-40);pads=pads.filter(p=>p.x+p.w>-40);segments=segments.filter(a=>a.x+a.length>-40);
  createAhead();currentRegion=elapsed<22?'NEON CITY':elapsed<48?'MACHINE DISTRICT':'ENERGY TUNNEL';
  const upcoming=segments.find(a=>a.x+a.length>runner.x+6);if(upcoming)currentTheme=upcoming.theme;
  ui.region.textContent=currentRegion;ui.score.textContent=Math.floor(travel/9).toLocaleString()+' m';ui.hearts.textContent='♥ '.repeat(runner.hp)+'♡ '.repeat(3-runner.hp);
@@ -100,7 +102,12 @@ function draw(){
   ctx.fillRect(x,ground-145,3,140);}}
 
  for(const g of gaps){ctx.fillStyle='#050a19';ctx.fillRect(g.x,ground-1,g.w,H-ground+2);ctx.fillStyle='#f77c9c';ctx.fillRect(g.x-4,ground-2,4,15);ctx.fillRect(g.x+g.w,ground-2,4,15)}
- // Elevated platforms pass through from below; draw them behind hazards.
+ // Platforms draw behind obstacles. They only collide with the player on descent.
+ for(const pad of pads){ctx.save();ctx.shadowBlur=14;ctx.shadowColor='#ffe36d';
+ ctx.fillStyle='#a47729';ctx.fillRect(pad.x,ground-10,pad.w,10);
+ ctx.fillStyle='#ffe06a';ctx.fillRect(pad.x,ground-13,pad.w,6);
+ ctx.fillStyle='#fff1ba';for(let i=5;i<pad.w-4;i+=11)ctx.fillRect(pad.x+i,ground-11,5,3);
+ ctx.restore()}
  for(const p of platforms){ctx.save();ctx.shadowBlur=11;ctx.shadowColor='#ae8eff';ctx.fillStyle='#4b477f';ctx.fillRect(p.x,p.y,p.w,11);
   ctx.fillStyle='#d5adff';ctx.fillRect(p.x,p.y,p.w,4);
   ctx.fillStyle='#8974e0';for(let k=13;k<p.w-7;k+=24)ctx.fillRect(p.x+k,p.y+5,12,2);ctx.restore()}

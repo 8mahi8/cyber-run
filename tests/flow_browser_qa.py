@@ -36,7 +36,7 @@ html=html.replace('<link rel="stylesheet" href="style.css">','<style>'+css+'</st
 tag='<script src="core.js"></script><script src="stickman.js"></script><script src="game.js"></script>'
 html=html.replace(tag,'<script>'+core+'</script><script>'+fig+'</script><script>'+game+'</script>')
 with sync_playwright() as p:
- browser=p.chromium.launch(headless=True,args=['--no-sandbox','--disable-dev-shm-usage'])
+ browser=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox','--disable-dev-shm-usage'])
  for width,height in [(844,390),(1024,768),(390,844)]:
   page=browser.new_page(viewport={'width':width,'height':height},has_touch=True,is_mobile=True)
   errors=[]

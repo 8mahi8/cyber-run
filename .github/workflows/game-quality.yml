@@ -1,0 +1,26 @@
+name: Game regression and course quality
+on:
+  push:
+    branches:
+      - dev/prototype-v01
+  pull_request:
+    paths:
+      - 'core.js'
+      - 'game.js'
+      - 'tests/**'
+      - 'tools/**'
+permissions:
+  contents: read
+jobs:
+  physics-and-quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test collision, input, high speed, and course transitions
+        run: node --test tests/*.test.js
+      - name: Reject repetitive course distributions
+        run: node tools/gameplay-quality-gate.cjs

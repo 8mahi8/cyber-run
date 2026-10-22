@@ -91,6 +91,12 @@ const PATTERNS=[
   script:[[.17,'jump'],[1.10,'jump'],[2.13,'duck-on'],[2.76,'duck-off']],
   pads:[[.80,44,95,'airboost']],gaps:[[1.03,1.55,'seconds']],
   hazards:[[2.42,'duck-gate']]},
+ // Endgame mastery: the broken catwalk and air ring BOTH matter. The exit
+ // requires crouching after the second, longer airborne phase.
+ {name:'fracture-rebound-gate',theme:'MASTER CHAIN',duration:3.55,weight:7,minTime:75,challenge:true,
+  script:[[.20,'jump'],[.96,'jump'],[2.42,'duck-on'],[3.01,'duck-off']],
+  platforms:[[.48,1.23,75,'fragile']],pads:[[1.40,44,225,'airboost']],
+  gaps:[[1.30,1.90,'seconds']],hazards:[[2.65,'duck-gate']]},
  {name:'breather',theme:'RECOVERY',duration:1.12,weight:.15,script:[],hazards:[]},
 ];
 function speedAt(seconds){return Math.min(MAX_SPEED,BASE_SPEED+Math.max(0,seconds)*7.5)}

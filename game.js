@@ -1,7 +1,7 @@
 (()=>{'use strict';
 const C=window.CyberRunCore,canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false}),$=id=>document.getElementById(id);if(!ctx||!C){$('message').textContent='ゲームを初期化できませんでした。';return}
 const ui={overlay:$('overlay'),msg:$('message'),start:$('primary'),score:$('score'),best:$('best'),distance:$('distance'),speed:$('speed'),hearts:$('hearts'),region:$('region'),duck:$('duck'),jump:$('jump')};
-let viewW=960,viewH=540,s=1,dpr=1,ground=C.GROUND,state='menu',runner=null,segments=[],hazards=[],gaps=[],platforms=[],pads=[],pickups=[],seed=0,rng=null,spawnCursor=0,elapsed=0,travel=0,invuln=0,rescue=0,nextFrame=0,lastFrame=0,gameId=0,duckHeld=false,jumpQueued=false,localBest=0,currentRegion='NEON CITY',currentTheme='GROUND FLOW',previousCourse=null,floaters=[],trail=[],hitPulse=0,effects=[],jumpFlash=0,landFlash=0,boostFlash=0,flowFlash=0,lastTheme='GROUND FLOW';
+let viewW=960,viewH=540,s=1,dpr=1,ground=C.GROUND,state='menu',runner=null,segments=[],hazards=[],gaps=[],platforms=[],pads=[],pickups=[],seed=0,rng=null,spawnCursor=0,elapsed=0,travel=0,invuln=0,rescue=0,nextFrame=0,lastFrame=0,gameId=0,duckHeld=false,jumpQueued=false,localBest=0,currentRegion='NEON CITY',currentTheme='GROUND FLOW',previousCourse=null,floaters=[],trail=[],hitPulse=0,effects=[],jumpFlash=0,landFlash=0,boostFlash=0,flowFlash=0,cleanFlash=0,lastClean=-100,hudAccumulator=0,lastTheme='GROUND FLOW';
 try{localBest=Number(localStorage.getItem('cyber-run-v06-distance-best'))||0}catch(_){/* storage may be blocked */}
 function resize(){
  const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight);
@@ -40,14 +40,19 @@ function playerRect(){return C.rectAt(runner.x+C.HITBOX_OFFSET_X,runner.bottom,r
 function isOnGround(){return C.isSupported(runner)}
 function jump(){if(state!=='running')return;jumpQueued=true}
 function setDuck(value){if(!runner)return;duckHeld=!!value&&state==='running';runner.duck=duckHeld&&isOnGround()&&runner.jumps===0;ui.duck.classList.toggle('pressed',duckHeld)}
-function start(){gameId++;seed=((Date.now()^Math.floor(performance.now()*10000))>>>0)||1;rng=C.randomizer(seed);runner=makeRunner();segments=[];hazards=[];gaps=[];platforms=[];pads=[];pickups=[];spawnCursor=runner.x+C.speedAt(0)*1.45;elapsed=0;travel=0;invuln=0;rescue=0;duckHeld=false;jumpQueued=false;previousCourse=null;state='running';floaters=[];trail=[];effects=[];jumpFlash=0;landFlash=0;boostFlash=0;flowFlash=0;lastTheme='GROUND FLOW';hitPulse=0;ui.start.textContent='もう一回';ui.overlay.classList.add('hidden');ui.best.textContent='BEST '+localBest.toLocaleString()+' m';lastFrame=performance.now();cancelAnimationFrame(nextFrame);nextFrame=requestAnimationFrame(frame)}
+function start(){gameId++;seed=((Date.now()^Math.floor(performance.now()*10000))>>>0)||1;rng=C.randomizer(seed);runner=makeRunner();segments=[];hazards=[];gaps=[];platforms=[];pads=[];pickups=[];spawnCursor=runner.x+C.speedAt(0)*1.45;elapsed=0;travel=0;invuln=0;rescue=0;duckHeld=false;jumpQueued=false;previousCourse=null;state='running';floaters=[];trail=[];effects=[];jumpFlash=0;landFlash=0;boostFlash=0;flowFlash=0;lastTheme='GROUND FLOW';cleanFlash=0;lastClean=-100;hudAccumulator=0;hitPulse=0;ui.start.textContent='もう一回';ui.overlay.classList.add('hidden');ui.best.textContent='BEST '+localBest.toLocaleString()+' m';lastFrame=performance.now();cancelAnimationFrame(nextFrame);nextFrame=requestAnimationFrame(frame)}
 function pause(){if(state==='running'){state='paused';cancelAnimationFrame(nextFrame);nextFrame=0;ui.msg.textContent='一時停止中';ui.start.textContent='再開';ui.overlay.classList.remove('hidden');setDuck(false)}else if(state==='paused'){resume()}}
 function resume(){if(state!=='paused')return;cancelAnimationFrame(nextFrame);nextFrame=0;state='running';ui.overlay.classList.add('hidden');lastFrame=performance.now();nextFrame=requestAnimationFrame(frame)}
 ui.start.addEventListener('click',()=>state==='paused'?resume():start());$('pause').addEventListener('click',pause);
 function bind(button,down,up){button.addEventListener('pointerdown',e=>{e.preventDefault();try{button.setPointerCapture(e.pointerId)}catch(_){}button.classList.add('pressed');down()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>button.addEventListener(type,e=>{e.preventDefault();button.classList.remove('pressed');if(up)up()}))}
 bind(ui.jump,jump);bind(ui.duck,()=>setDuck(true),()=>setDuck(false));
 const keys=new Set();addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();if(keys.has(e.code))return;keys.add(e.code);if(['ArrowUp','Space'].includes(e.code))jump();if(e.code==='ArrowDown')setDuck(true);if(e.code==='Escape'||e.code==='KeyP')pause()});addEventListener('keyup',e=>{keys.delete(e.code);if(e.code==='ArrowDown')setDuck(false)});addEventListener('blur',()=>{keys.clear();if(state==='running')pause()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='running')pause()});addEventListener('contextmenu',e=>e.preventDefault());
-function createAhead(){let guard=0;while(spawnCursor<viewW+700&&guard++<10){const eta=C.timeToTravel(elapsed,Math.max(0,spawnCursor-(runner.x+C.HITBOX_OFFSET_X)));const segment=C.makeSegment(spawnCursor,elapsed+eta,rng,runner.hp,previousCourse||{});spawnCursor+=segment.length;previousCourse={type:segment.type,theme:segment.theme};segments.push(segment);hazards.push(...segment.hazards);gaps.push(...segment.gaps);pickups.push(...segment.pickups);platforms.push(...segment.platforms);pads.push(...segment.pads)}}
+function createAhead(){let guard=0;while(spawnCursor<viewW+700&&guard++<10){const eta=C.timeToTravel(elapsed,Math.max(0,spawnCursor-(runner.x+C.HITBOX_OFFSET_X)));const segment=C.makeSegment(spawnCursor,elapsed+eta,rng,runner.hp,previousCourse||{});spawnCursor+=segment.length;
+  const prior=previousCourse||{};
+  previousCourse={type:segment.type,theme:segment.theme,
+   recentTypes:[...(prior.recentTypes||[]),segment.type].slice(-3),
+   recentThemes:[...(prior.recentThemes||[]),segment.theme].slice(-2)};
+  segments.push(segment);hazards.push(...segment.hazards);gaps.push(...segment.gaps);pickups.push(...segment.pickups);platforms.push(...segment.platforms);pads.push(...segment.pads)}}
 function hit(){if(invuln>0||state!=='running')return;runner.hp--;invuln=1.35;hitPulse=.32;floaters.push({x:runner.x+16,y:runner.bottom-66,t:0,text:'−1 HP',color:'#ff819d'});if(runner.hp<=0)gameOver()}
 function gameOver(){state='over';const metres=Math.floor(travel/9),newRecord=metres>localBest;
  if(newRecord){localBest=metres;try{localStorage.setItem('cyber-run-v06-distance-best',String(localBest))}catch(_){}}
@@ -55,7 +60,7 @@ function gameOver(){state='over';const metres=Math.floor(travel/9),newRecord=met
 function step(dt){
  for(const f of floaters){f.t+=dt;f.y-=22*dt}floaters=floaters.filter(f=>f.t<.65);
  elapsed+=dt;hitPulse=Math.max(0,hitPulse-dt);invuln=Math.max(0,invuln-dt);rescue=Math.max(0,rescue-dt);
- jumpFlash=Math.max(0,jumpFlash-dt);landFlash=Math.max(0,landFlash-dt);boostFlash=Math.max(0,boostFlash-dt);flowFlash=Math.max(0,flowFlash-dt);
+ jumpFlash=Math.max(0,jumpFlash-dt);landFlash=Math.max(0,landFlash-dt);boostFlash=Math.max(0,boostFlash-dt);flowFlash=Math.max(0,flowFlash-dt);cleanFlash=Math.max(0,cleanFlash-dt);
  for(const e of effects){e.x+=e.vx*dt;e.y+=e.vy*dt;e.vy+=170*dt;e.life-=dt}
  effects=effects.filter(e=>e.life>0);
  const speed=C.speedAt(elapsed),move=speed*dt;travel+=move;spawnCursor-=move;
@@ -72,7 +77,23 @@ function step(dt){
  if(previousSupport===null&&runner.support!==null&&previousVy>100){landFlash=.21;burst(runner.x+20,runner.bottom,'#94d9ff',10,-75,-42)}
  if(runner.bottom>ground+112){hit();runner.bottom=ground;runner.vy=0;runner.jumps=0;runner.support='ground';rescue=1.0;invuln=Math.max(invuln,1.4)}
  const body=playerRect();
- for(const h of hazards){if(C.overlap(body,C.hazardAt(h,elapsed))){hit();break}}
+ // Signal an especially tight clean pass with a small cosmetic burst.
+ // This never changes distance scoring, collisions or procedural RNG.
+ for(const h of hazards){
+  const collider=C.hazardAt(h,elapsed);
+  if(body.x<h.x+h.w&&body.x+body.w>h.x){
+   const separation=Math.max(collider.y-(body.y+body.h),body.y-(collider.y+collider.h),0);
+   if(!C.overlap(body,collider))h.closestClearance=Math.min(h.closestClearance??Infinity,separation);
+  }
+  if(!h._cleared&&h.x+h.w<body.x){
+   h._cleared=true;
+   if(invuln<=0&&Number.isFinite(h.closestClearance)&&h.closestClearance<=24&&elapsed-lastClean>.36){
+    cleanFlash=.19;lastClean=elapsed;
+    burst(body.x-5,body.y+body.h*.5,'#8ff5fa',5,-115,-6);
+   }
+  }
+  if(C.overlap(body,collider)){hit();break}
+ }
  for(const item of pickups){if(item.taken)continue;const midx=body.x+body.w/2,midy=body.y+body.h/2;
   if(Math.hypot(item.x-midx,item.y-midy)<item.r+17){item.taken=true;runner.hp=Math.min(3,runner.hp+1);floaters.push({x:item.x,y:item.y,t:0,text:'HP +1',color:'#ff819d'})}}
  hazards=hazards.filter(h=>h.x+h.w>-40);gaps=gaps.filter(g=>g.x+g.w>-40);pickups=pickups.filter(item=>!item.taken&&item.x>-40);
@@ -80,8 +101,13 @@ function step(dt){
  createAhead();currentRegion=elapsed<22?'NEON CITY':elapsed<48?'MACHINE DISTRICT':'ENERGY TUNNEL';
  const upcoming=segments.find(a=>a.x+a.length>runner.x+C.HITBOX_OFFSET_X);
  if(upcoming){currentTheme=upcoming.theme;if(currentTheme!==lastTheme){flowFlash=.60;lastTheme=currentTheme}}
- ui.region.textContent=currentRegion;ui.score.textContent=Math.floor(travel/9).toLocaleString()+' m';ui.hearts.textContent='♥ '.repeat(runner.hp)+'♡ '.repeat(3-runner.hp);
- ui.speed.textContent=(speed/C.BASE_SPEED).toFixed(1)+'×';ui.distance.textContent=currentTheme;
+ // Throttle HUD DOM writes to 20Hz; keep physics at 120Hz.
+ hudAccumulator+=dt;
+ if(hudAccumulator>=.05||state!=='running'){
+  hudAccumulator=0;
+  ui.region.textContent=currentRegion;ui.score.textContent=Math.floor(travel/9).toLocaleString()+' m';ui.hearts.textContent='♥ '.repeat(runner.hp)+'♡ '.repeat(3-runner.hp);
+  ui.speed.textContent=(speed/C.BASE_SPEED).toFixed(1)+'×';ui.distance.textContent=currentTheme;
+ }
 }
 function draw(){
  const W=viewW,H=viewH,t=travel,velocity=C.speedAt(elapsed),intensity=Math.min(1,(velocity-C.BASE_SPEED)/(C.MAX_SPEED-C.BASE_SPEED)),colors=currentRegion==='MACHINE DISTRICT'?['#070b1d','#253354','#ff8db0']:currentRegion==='ENERGY TUNNEL'?['#0d0b26','#3c1f5c','#bd96ff']:['#081028','#16405b','#55d7fa'];
@@ -184,6 +210,10 @@ function draw(){
   const airborne=runner.support===null,bright=boostFlash>0?'#fff0a3':'#71fbe4';
   const stride=Math.sin(elapsed*(23+intensity*20))*4.5;
   ctx.save();ctx.globalAlpha=invuln>0&&Math.floor(invuln*12)%2===0?.40:1;
+  // Camera-only squash/stretch around feet. Physics hitboxes remain unchanged.
+  const compression=Math.min(1,landFlash/.21),stretch=Math.min(1,jumpFlash/.23);
+  const scaleX=1+compression*.13-stretch*.055,scaleY=1-compression*.12+stretch*.11;
+  ctx.translate(x+19,runner.bottom);ctx.scale(scaleX,scaleY);ctx.translate(-x-19,-runner.bottom);
   for(let k=1;k<=3+Math.floor(intensity*3);k++){
    ctx.fillStyle=k%2===0?'#2ec9d578':'#92ffe055';
    ctx.fillRect(x-k*(13+intensity*5),y+h*.64+k*1.5,11+intensity*10,2);
@@ -213,6 +243,8 @@ function draw(){
  for(const f of floaters){ctx.save();ctx.globalAlpha=Math.max(0,1-f.t/.65);ctx.fillStyle=f.color;ctx.font='bold 16px system-ui';ctx.textAlign='center';ctx.fillText(f.text,f.x,f.y);ctx.restore()}
  ctx.restore();
  if(hitPulse>0){ctx.fillStyle='rgba(255,64,107,'+(hitPulse*.28)+')';ctx.fillRect(0,0,W,H)}
+ if(cleanFlash>0){ctx.save();ctx.globalAlpha=cleanFlash*.32;ctx.strokeStyle='#62ecff';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(2,ground+cameraY-12);ctx.lineTo(2+(1-cleanFlash/.19)*75,ground+cameraY-12);ctx.stroke();ctx.restore()}
 }
 function frame(now){if(state!=='running')return;let dt=Math.min(.05,Math.max(0,(now-lastFrame)/1000));lastFrame=now; // substeps prevent tunneling at higher speed or low FPS
  while(dt>0&&state==='running'){const sub=Math.min(1/120,dt);step(sub);dt-=sub}draw();if(state==='running')nextFrame=requestAnimationFrame(frame)}

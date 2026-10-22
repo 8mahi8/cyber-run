@@ -113,7 +113,7 @@ function physicsStep(p,dt,x,platforms,gaps,duckHeld,jumpRequested,time,rescue=0,
  if(landing){
   const spring=landing.id==='ground'&&pads.find(pad=>x+HITBOX_OFFSET_X+BODY_W*.86>pad.x&&x+HITBOX_OFFSET_X+BODY_W*.14<pad.x+pad.w);
   if(spring){p.bottom=GROUND;p.vy=-SPRING_JUMP;p.jumps=1;p.support=null;p.coyote=0;p.duck=false;p.jumpBuffer=0}
-  else {p.bottom=landing.y;p.vy=0;p.jumps=0;p.support=landing.id;p.coyote=.075;p.duck=!!duckHeld;p.jumpBuffer=0}
+  else {p.bottom=landing.y;p.vy=0;p.jumps=0;p.support=landing.id;p.coyote=.075;p.duck=!!duckHeld; /* Retain a buffered jump through touchdown. */}
  }
  else {p.support=null;if(wasSupported&&p.jumps===0)p.coyote=.075;if(p.jumps===0&&p.coyote<=0)p.jumps=1;p.duck=false}
  return p;
@@ -182,8 +182,16 @@ function makeSegment(x,seconds,rng,hp,recent={}){
  const weighted=allowed.map(p=>{
   const difficulty=p.name==='breather'?.65:p.platforms?.length?3.2:p.hazards.length>=3?3.0:2.4;
   let weight=p.weight*Math.max(.20,1-Math.abs(target-difficulty)*.46);
+  // Beyond the opening, prioritize more decisions per second, not just speed.
+  const pressure=Math.min(1,Math.max(0,(seconds-12)/78));
+  const active=(p.script||[]).filter(action=>action[1]==='jump'||action[1]==='duck-on').length;
+  if(active>=4)weight*=1+pressure*2.0;
+  else if(active>=3)weight*=1+pressure*.9;
+  else if(active<=1&&p.name!=='breather')weight*=1-pressure*.5;
   if(p.name===recent.type)weight*=.025;
   if(p.theme===recent.theme)weight*=.32;
+  if((recent.recentTypes||[]).includes(p.name))weight*=.46;
+  if((recent.recentThemes||[]).includes(p.theme))weight*=.72;
   if(p.name==='breather'&&recent.type==='breather')weight*=.1;
   return {p,weight};
  });

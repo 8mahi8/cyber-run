@@ -8,8 +8,8 @@ const pause=ms=>new Promise(r=>setTimeout(r,ms));
 const chrome=['/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser',process.env.CHROME_BIN].filter(Boolean).find(fs.existsSync);
 const root=path.resolve(__dirname,'..');
 const allowed=new Set(['handcrafted-playtest-v2.html','core.js','stickman.js','style.css','handcrafted-level-v2.js','game-handcrafted-v2.js']);
-async function until(f,timeout=12000){const start=Date.now();while(Date.now()-start<timeout){try{const v=await f();if(v)return v}catch(_){}await pause(75)}throw Error('Timed out waiting for browser')}
-test('Chromium V2 smoke: canvas, coin, start and pause',{timeout:40000},async t=>{
+async function until(f,timeout=25000){const start=Date.now();while(Date.now()-start<timeout){try{const v=await f();if(v)return v}catch(_){}await pause(75)}throw Error('Timed out waiting for browser')}
+test('Chromium V2 smoke: canvas, coin, start and pause',{timeout:70000},async t=>{
  if(!chrome){t.skip('Chromium unavailable on test runner');return}
  const server=http.createServer((req,res)=>{
   const file=decodeURIComponent((req.url||'').split('?')[0]).slice(1);

@@ -5,10 +5,10 @@
  */
 const assert=require('node:assert/strict');
 const C=require('../core.js'),H=require('../handcrafted-level-v2.js');
-assert.equal(H.totalSections,15,'expected study section count');
-assert.equal(H.SECTIONS[11].base,'relay-bridge','bespoke relay chain must be present');
-assert.equal(H.SECTIONS[8].base,'skyline-exit');
-assert.equal(H.SECTIONS[12].base,'tunnel-bridge');
+assert.equal(H.totalSections,16,'expected study section count');
+assert(H.SECTIONS.some(s=>s.base==='relay-bridge'),'bespoke relay chain must be present');
+assert(H.SECTIONS.some(s=>s.base==='skyline-exit'));
+assert(H.SECTIONS.some(s=>s.base==='tunnel-bridge'));
 const warmup=['reverse-switch','sky-ascend','drop-and-duck'];
 assert.deepEqual(H.SECTIONS.slice(0,3).map(x=>x.base),warmup);
 const initDist=C.BASE_SPEED*1.45;
@@ -33,7 +33,17 @@ for(let i=0;i<H.totalSections;i++){
  cursor+=s.length;
  entry+=s.pattern.duration;
 }
-assert.equal(coins,167,'expected guide coin count after physics witness');
+assert.equal(coins,180,'expected guide coin count after physics witness');
+const springIndex=H.SECTIONS.findIndex(s=>s.base==='spring-pressure');
+assert(springIndex>=3,'spring mechanism must occur after warmup');
+for(const at of [0,20,50,100]){
+ const stage=H.makeSection(springIndex,0,at);
+ assert(C.replayPattern(stage).ok,'spring stage must clear at speed corresponding to '+at+'s');
+ assert(!C.replayPattern({...stage,pads:[]}).ok,'spring must actually be necessary: '+at+'s');
+ const path=C.replayPattern(stage,{trace:true}).route;
+ assert(path.some(s=>s.support&&s.support!=='ground'), 'spring stage should visit elevated platform');
+}
+
 const warmupEnd=C.timeToTravel(0,initDist)+segments.slice(0,3).reduce((sum,s)=>sum+s.pattern.duration,0);
 assert(warmupEnd>9&&warmupEnd<11,'fixed opening should be ~10s');
 function testStitched(offset){
@@ -58,4 +68,4 @@ function testStitched(offset){
  }
 }
 for(const offset of [0,.025,.045,.06,.08])testStitched(offset);
-console.log('PASS: 13 sections, '+coins+' non-scoring guide coins, '+entry.toFixed(2)+'s, 120Hz continuous replay, ±80ms alternating input jitter');
+console.log('PASS: 16 sections, '+coins+' non-scoring guide coins, '+entry.toFixed(2)+'s, 120Hz continuous replay, ±80ms alternating input jitter');

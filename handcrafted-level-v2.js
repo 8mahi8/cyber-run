@@ -11,6 +11,11 @@
  if(!C)throw Error('CYBER RUN core missing');
  // Fixed warm-up occupies ~8.3s of obstacles after the short initial lead-in
  // (roughly 9.7s from RUN START). Remaining motifs test learned action chains.
+ const CUSTOM=Object.freeze({'relay-bridge':{
+  name:'relay-bridge',theme:'SWITCHBACK RELAY',duration:4.4,weight:0,
+  script:[[.12,'duck-on'],[.56,'duck-off'],[.72,'jump'],[1.59,'jump'],[2.67,'duck-on'],[3.16,'duck-off'],[3.36,'jump']],
+  platforms:[[1.06,1.83,77]],hazards:[[.42,'duck-gate'],[2.96,'duck-gate'],[3.68,'low']],gaps:[],pads:[]
+ }});
  const DESIGN=[
   ['GATE BEAT','reverse-switch','WARM-UP','しゃがみ → 解除 → ジャンプ'],
   ['UPSTEP','sky-ascend','WARM-UP','着地 → 再ジャンプ → 上段へ'],
@@ -22,12 +27,12 @@
   ['PULSE DRONE','pulse-drone','MOTIF E','移動障害物 → 跳ぶ → 通路'],
   ['FRACTURE SHUTTER','fracture-shutter','CHAIN A','崩落 → 着地後の必須しゃがみ'],
   ['BROKEN CIRCUIT','fracture-rebound-gate','CHAIN B','崩落 → リング → 必須しゃがみ'],
-  ['THREE BEATS','rhythm-five','CHAIN C','ジャンプとしゃがみの交互',[1.07]],
+  ['SWITCHBACK RELAY','relay-bridge','CHAIN C','しゃがみ→高台着地→再跳躍→着地しゃがみ→最後の跳躍'],
   ['RING TO CRAWL','orb-gate','CHAIN D','空中リング → 着地後の必須しゃがみ'],
   ['FINAL RHYTHM','overdrive-rhythm','CHAIN E','高密度連続アクション',[1.07,3.45]]
  ];
  const SECTIONS=Object.freeze(DESIGN.map(([title,base,chapter,objective,gates],i)=>{
-  const source=C.PATTERNS.find(p=>p.name===base);
+  const source=C.PATTERNS.find(p=>p.name===base)||CUSTOM[base];
   if(!source)throw Error('Missing pattern: '+base);
   const pattern={...source,name:'slice-v2-'+String(i+1).padStart(2,'0')+'-'+base,
    script:source.script.map(a=>a.slice()),

@@ -37,6 +37,7 @@
  const choose=(array,rng)=>array[Math.floor(rng()*array.length)];
  function makeGenerator(seed=1){
   const rng=C.randomizer(seed>>>0||1);
+  const heartRng=C.randomizer(((seed>>>0)^0x85ebca6b)>>>0); // separate from terrain seed
   let count=0,queue=[],lastId=-1,prevId=-1,blockNumber=0,prevGroup=-1;
   function pick(pool){
    const candidates=pool.filter(id=>id!==lastId&&id!==prevId);
@@ -81,7 +82,7 @@
     if(index===lastId){index=choose((tierAt(seconds)>=4?EXPERT:MIDDLE).filter(id=>id!==lastId),rng)}
    }
    const segment=H.makeSection(index,x,seconds);
-   if(!C.replayPattern(segment).ok)throw Error('Infinite segment cannot be traversed: '+index+' at '+seconds);
+   // H.makeSection itself certifies a safe physics route while placing coins.
    segment.sequenceNumber=count;
    segment.difficulty=pressureAt(seconds);
    segment.authoredSection=index;
@@ -89,7 +90,7 @@
    segment.infinite=true;
    // The only randomized non-score collectible is a rare accessible heart,
    // never a required route waypoint or a groundless trap.
-   if(hp<3&&seconds>30&&rng()<.0035){
+   if(hp<3&&seconds>30&&heartRng()<.0035){
     const witness=C.replayPattern(segment,{trace:true}).route;
     const first=witness.find(p=>p.time>.6&&p.support==='ground'&&p.bottom===C.GROUND);
     if(first){

@@ -42,7 +42,7 @@ test('Chromium V2 smoke: canvas, coin, start and pause',{timeout:40000},async t=
   await send('Emulation.setDeviceMetricsOverride',{width:1024,height:768,deviceScaleFactor:1,mobile:false});
   await send('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/handcrafted-playtest-v2.html'});
   await until(()=>ev("document.readyState==='complete' && !!window.CyberRunHandcrafted"));
-  assert.equal(await ev('window.CyberRunHandcrafted.totalSections'),13);
+  assert.equal(await ev('window.CyberRunHandcrafted.totalSections'),15);
   assert.equal(await ev("document.getElementById('primary').textContent"),'RUN START');
   assert.equal(await ev("document.getElementById('game').width>0"),true);
   await ev("document.getElementById('primary').click();true");

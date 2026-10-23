@@ -20,6 +20,14 @@
  const EXPERT=[9,12,13,15,16,17,18];
  const REST=[4,7,9,10,14]; // still active gameplay, not a long blank.
  const TITLES=['WARMUP','BUILD','COMBO','PRESSURE','EXPERT','ENDURANCE'];
+ // Variation must be mechanical, not cosmetic: several elevated-bridge patterns
+ // share the same jump rhythm despite having different IDs and names.
+ const FAMILIES=Object.freeze([
+  'gate','elevated','elevated','gate','elevated','fragile',
+  'ring','spring','drone','elevated','fragile','ring',
+  'elevated','elevated','ring','rhythm','spring','ring','elevated'
+ ]);
+ const familyOf=id=>FAMILIES[id]||'other';
  function tierAt(seconds){
   if(seconds<10)return 0;
   if(seconds<30)return 1;
@@ -39,10 +47,18 @@
  function makeGenerator(seed=1){
   const rng=C.randomizer(seed>>>0||1);
   const heartRng=C.randomizer(((seed>>>0)^0x85ebca6b)>>>0); // separate from terrain seed
-  let count=0,queue=[],lastId=-1,prevId=-1,blockNumber=0,prevGroup=-1;
-  function pick(pool){
-   const candidates=pool.filter(id=>id!==lastId&&id!==prevId);
-   return choose(candidates.length?candidates:pool,rng);
+  let count=0,queue=[],lastId=-1,blockNumber=0,history=[];
+  function pick(pool,previous=lastId,planned=[]){
+   let candidates=pool.filter(id=>id!==previous);
+   if(!candidates.length)candidates=pool.slice();
+   // Prefer a different family whenever the pool offers one.
+   const otherFamily=candidates.filter(id=>familyOf(id)!==familyOf(previous));
+   if(otherFamily.length)candidates=otherFamily;
+   // Prevent an identical pattern reappearing after only one intervening section,
+   // while never restricting a pool so hard that it cannot yield a valid section.
+   const fresh=candidates.filter(id=>!history.includes(id)&&!planned.includes(id));
+   if(fresh.length)candidates=fresh;
+   return choose(candidates,rng);
   }
   function refill(seconds){
    const difficulty=pressureAt(seconds),band=difficulty.tier;
@@ -55,7 +71,7 @@
     block=[pick(blockNumber%3===0?EXPERT:ADVANCED)];
    } else if(band===4){
     const a=pick(EXPERT);
-    const b=choose(EXPERT.filter(id=>id!==a),rng);
+    const b=pick(EXPERT,a,[a]);
     block=[a,b];
     if(blockNumber%4===3)block=[pick(REST)]; // short, still active.
    } else if(band>=5){
@@ -65,8 +81,8 @@
      // Long, demanding alternation after top speed; no ever-growing
      // geometry density or impossible gaps.
      for(let k=0;k<count;k++){
-      const options=EXPERT.filter(id=>id!==(block.at(-1)??lastId));
-      block.push(choose(options.length?options:EXPERT,rng));
+      const previous=block.length?block[block.length-1]:lastId;
+      block.push(pick(EXPERT,previous,block));
      }
     }
    } else block=[pick(EARLY)];
@@ -80,7 +96,11 @@
     if(!queue.length)refill(seconds);
     index=queue.shift();
     // Guard the same section from starting immediately twice.
-    if(index===lastId){index=choose((tierAt(seconds)>=4?EXPERT:MIDDLE).filter(id=>id!==lastId),rng)}
+    if(index===lastId||familyOf(index)===familyOf(lastId)){
+     // This should not trigger with a correctly filled queue; fail safe for
+     // future changes to tier pools or externally supplied pattern lists.
+     index=pick(tierAt(seconds)>=4?EXPERT:tierAt(seconds)>=3?ADVANCED:tierAt(seconds)>=2?MIDDLE:EARLY);
+    }
    }
    const segment=index<H.totalSections?H.makeSection(index,x,seconds):EXTRA.makeSection(index,x,seconds);
    // H.makeSection itself certifies a safe physics route while placing coins.
@@ -99,11 +119,12 @@
      if(coin){coin.kind='heart';coin.r=13;coin.y=C.GROUND-26;}
     }
    }
-   prevId=lastId;lastId=index;count++;
+   history.push(index);if(history.length>3)history.shift();
+   lastId=index;count++;
    return segment;
   }
-  return Object.freeze({next,stats:()=>({count,lastId,queue:queue.slice(),blockNumber})});
+  return Object.freeze({next,stats:()=>({count,lastId,queue:queue.slice(),blockNumber,history:history.slice()})});
  }
- return Object.freeze({makeGenerator,tierAt,pressureAt,WARMUP,
+ return Object.freeze({makeGenerator,tierAt,pressureAt,familyOf,WARMUP,
   totalSections:Infinity,title:'CYBER RUN · INFINITE STUDY 0.9'});
 });

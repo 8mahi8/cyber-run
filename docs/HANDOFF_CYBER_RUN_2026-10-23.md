@@ -1,5 +1,8 @@
 # CYBER RUN｜短縮チャット用の詳細引き継ぎ（2026-10-23）
 
+> **最新 V0.10（2026-10-24）**：ユーザーはV0.9の無限ランを「だいぶいい感じ、あと少しギミック／パターンを増やせば完成に近い」と評価。そこで**固定16区間は変えず**に、無限ラン専用の新パターンを3種類追加：ID16 SPRING CATWALK（バネ→崩落高台→脱出→しゃがみ）、ID17 TWIN HALO（**空中リング2個が両方必須**の長い穴）、ID18 SHATTER RELAY（崩落する高台の連続操作）。新コード `extra-motifs-v1.js` を `infinite-level-v1.js` の抽選候補へ統合、60秒以降と最奥の上級難易度で出やすい。旧V0.9の `/playtest-v24/` は残し、新しい独立HTML `main:playtest-v25/index.html` を作成。想定GitHub Pages試遊URLは **https://8mahi8.github.io/cyber-run/playtest-v25/**（外部HTTP配信は本人確認待ち）。通常CI**87/87成功**（run 39984577843）、Chromiumの新旧試遊ソース含む検証も全成功（run 39984577824）。特に**V0.10のmain上の単一HTMLを220秒、約24,066m、HP3/3でノーダメージ走行**。新規パターンは速度帯0〜270秒／正逆±80msズレの通過と必須ギミックの省略失敗を検証。低速で早いしゃがみ解除が不公平になるケースが見つかったため、SHATTER RELAYの最初のシャッター位置を微調整した。**GitHub Pages＝本人試遊、Google Sites＝学校公開**。Google Sites・既存試遊ページ・ランキングは変更なし。詳細：[INFINITE_V010_2026-10-24.md](./INFINITE_V010_2026-10-24.md)。
+
+
 > **最新：無限ラン V0.9 試遊準備完了（2026-10-24）**：ユーザーはV2.3.1の難易度を「序盤だけこの程度で良い。先ほどもっと難しく」と補足。この方針に従い `infinite-level-v1.js`、`game-infinite-v1.js`、`infinite-playtest-v1.html` を開発ブランチに実装。最初の約10秒は旧16区間の冒頭3つを固定、以降はseedで手作りパーツを条件付き抽選し、10〜30秒 BUILD、30〜60 COMBO、60〜100 PRESSURE、100〜160 EXPERT、160秒以降 ENDURANCE と変化。最高速度後も高難度連続チェーンの長さで更に難化する。GitHub Pages試遊候補として **mainの新しい別フォルダ `playtest-v24/index.html`** に5つのJSとCSSを同梱した完全単体HTMLを追加、**https://8mahi8.github.io/cyber-run/playtest-v24/** が試遊URLの想定（外部HTTP実配信はユーザー側未確認）。以前のV2.3.1 `/playtest-v23/` とGoogle Sites本番は変更なし。**通常CI83/83成功**（run 39980871318）、Chromium 220秒の実操作自動再生は **24,072m/HP3/3で無限継続**、mainから取得した単体ページで同等テストも成功（run **39980871305**、24,067m/HP3/3）。詳しくは [INFINITE_V09_2026-10-24.md](./INFINITE_V09_2026-10-24.md)。**次は本人のGitHub Pages実機試遊・難易度評価**が必要。Google Sitesに貼るのは許可が出てから。
 
 

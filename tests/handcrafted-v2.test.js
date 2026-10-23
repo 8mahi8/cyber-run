@@ -54,6 +54,29 @@ for(let i=0;i<H.totalSections;i++){
  entry+=s.pattern.duration;
 }
 assert.equal(coins,180,'expected guide coin count after physics witness');
+// Guard against visually impressive but mechanically optional elevated routes.
+// Deleting either of the first two jumps must now make the relay/tunnel impassable,
+// across low, mid and capped running speed. A missing jump used to be survivable.
+for(const name of ['relay-bridge','tunnel-bridge']){
+ const section=H.SECTIONS.findIndex(s=>s.base===name);
+ assert(section>=0,'missing crafted chain '+name);
+ for(const seconds of [0,20,40,70,100]){
+  const course=H.makeSection(section,0,seconds);
+  assert(C.replayPattern(course).ok,'crafted chain baseline failed '+name+' '+seconds);
+  const jumps=course.pattern.script.flatMap((action,i)=>action[1]==='jump'?[i]:[]);
+  assert(jumps.length>=3,'expected consecutive jumps');
+  for(const omitted of jumps.slice(0,2)){
+   const copy={...course,pattern:{...course.pattern,
+    script:course.pattern.script.filter((_,i)=>i!==omitted)}};
+   assert(!C.replayPattern(copy).ok,
+    'unexpected shortcut that bypasses elevated motion '+name+' action '+omitted+' at '+seconds);
+  }
+  const jitter=course.pattern.script.map((_,i)=>i%2?.08:-.08);
+  assert(C.replayPattern(course,{actionOffsets:jitter}).ok,
+   'crafted mandatory jumps must tolerate alternating +/-80ms: '+name+' at '+seconds);
+ }
+}
+
 const springIndex=H.SECTIONS.findIndex(s=>s.base==='spring-pressure');
 assert(springIndex>=3,'spring mechanism must occur after warmup');
 for(const at of [0,20,50,100]){

@@ -127,6 +127,22 @@
   }
   return Object.freeze({next,stats:()=>({count,lastId,queue:queue.slice(),blockNumber,history:history.slice()})});
  }
- return Object.freeze({makeGenerator,tierAt,pressureAt,familyOf,WARMUP,
+ // Physics tracks consumed rings and fragile touchdown timestamps by object ID.
+ // In a truly endless run those IDs would otherwise grow forever, long after
+ // the geometry has scrolled away. Retain only active geometry records.
+ function pruneExpiredPhysics(runner,platforms,pads){
+  if(!runner)return {fragile:0,airBoosts:0};
+  const liveFragile=new Set(platforms.filter(p=>p.kind==='fragile').map(p=>p.id));
+  const liveRings=new Set(pads.filter(p=>p.kind==='airboost').map(p=>p.id));
+  for(const id of Object.keys(runner.fragileTimes||{})){
+   if(!liveFragile.has(id))delete runner.fragileTimes[id];
+  }
+  for(const id of Object.keys(runner.airBoosts||{})){
+   if(!liveRings.has(id))delete runner.airBoosts[id];
+  }
+  return {fragile:Object.keys(runner.fragileTimes||{}).length,
+   airBoosts:Object.keys(runner.airBoosts||{}).length};
+ }
+ return Object.freeze({makeGenerator,tierAt,pressureAt,familyOf,pruneExpiredPhysics,WARMUP,
   totalSections:Infinity,title:'CYBER RUN · INFINITE STUDY 0.9'});
 });

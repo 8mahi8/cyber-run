@@ -67,12 +67,28 @@
   const evidence=C.replayPattern(segment,{trace:true});
   if(!evidence.ok)throw Error('Handcrafted section lost witnessed solution: '+segment.type+' '+evidence.reason);
   const trace=evidence.route,coins=[];
-  for(let t=.34;t<segment.pattern.duration-.25;t+=.255){
-   const sample=trace[Math.min(trace.length-1,Math.round(t/C.DT))];
+  // Evenly spaced WORLD positions stay readable at 400–1150 px/s.
+  // Time-only spacing used to thin out dramatically as the runner accelerated.
+  // Keep each coin aligned to the physics-verified movement path, never random.
+  const WORLD_COIN_SPACING=84;
+  let sampleIndex=0;
+  for(let ahead=70;ahead<segment.length-65;ahead+=WORLD_COIN_SPACING){
+   const target=segment.x+ahead;
+   while(sampleIndex<trace.length-1&&
+    trace[sampleIndex].worldX+C.HITBOX_OFFSET_X+C.BODY_W/2<target)sampleIndex++;
+   const sample=trace[sampleIndex];
    if(!sample)continue;
-   coins.push({id:segment.type+':coin:'+coins.length,
+   const coin={id:segment.type+':coin:'+coins.length,
     kind:'guide-coin',x:sample.worldX+C.HITBOX_OFFSET_X+C.BODY_W/2,
-    y:sample.bottom-(sample.duck?14:26),r:7,taken:false});
+    y:sample.bottom-(sample.duck?14:26),r:7,taken:false};
+   // Never hide a hazard inside an inviting guide coin.
+   const unsafe=segment.hazards.some(h=>{
+    const box=C.hazardAt(h,segment.seconds+sample.time);
+    const dx=Math.max(box.x-coin.x,0,coin.x-box.x-box.w);
+    const dy=Math.max(box.y-coin.y,0,coin.y-box.y-box.h);
+    return Math.hypot(dx,dy)<coin.r+2;
+   });
+   if(!unsafe)coins.push(coin);
   }
   return coins;
  }

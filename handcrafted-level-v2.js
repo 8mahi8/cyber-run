@@ -25,11 +25,11 @@
   name:'tunnel-bridge',theme:'TUNNEL BRIDGE',duration:4.32,weight:0,
   script:[[.13,'duck-on'],[.61,'duck-off'],[.77,'jump'],[1.57,'jump'],[2.81,'duck-on'],[3.34,'duck-off'],[3.55,'jump']],
   platforms:[[1.04,1.65,77],[1.70,2.53,125]],
-  hazards:[[.43,'duck-gate'],[3.06,'duck-gate'],[3.83,'low']],gaps:[],pads:[]
+  hazards:[[.43,'duck-gate'],[1.11,'low'],[2.24,'low'],[3.06,'duck-gate'],[3.83,'low']],gaps:[],pads:[]
  },'relay-bridge':{
   name:'relay-bridge',theme:'SWITCHBACK RELAY',duration:4.4,weight:0,
   script:[[.12,'duck-on'],[.56,'duck-off'],[.72,'jump'],[1.59,'jump'],[2.67,'duck-on'],[3.16,'duck-off'],[3.36,'jump']],
-  platforms:[[1.06,1.83,77]],hazards:[[.42,'duck-gate'],[2.96,'duck-gate'],[3.68,'low']],gaps:[],pads:[]
+  platforms:[[1.06,1.83,77]],hazards:[[.42,'duck-gate'],[1.11,'low'],[2.24,'low'],[2.96,'duck-gate'],[3.68,'low']],gaps:[],pads:[]
  }});
  const DESIGN=[
   ['GATE BEAT','reverse-switch','WARM-UP','しゃがみ → 解除 → ジャンプ'],

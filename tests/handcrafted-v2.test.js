@@ -20,6 +20,13 @@ for(let i=0;i<H.totalSections;i++){
  const replay=C.replayPattern(s,{trace:true});
  assert(replay.ok,'standalone witnessed physics failed: '+s.type);
  assert(s.pickups.length>=5,'empty coin trail: '+s.type);
+ // After increasing density the visible trail should never have large voids
+ // within one handmade section (apart from the section edge margin).
+ for(let i=1;i<s.pickups.length;i++){
+  const spacing=s.pickups[i].x-s.pickups[i-1].x;
+  assert(spacing>55&&spacing<110,'uneven coin trail spacing: '+s.type+' '+spacing);
+ }
+
  // Every guide coin must be collectable on the certified route without
  // overlapping a hazard silhouette. Coins are guidance, not random decoration.
  for(const coin of s.pickups){
@@ -53,7 +60,7 @@ for(let i=0;i<H.totalSections;i++){
  cursor+=s.length;
  entry+=s.pattern.duration;
 }
-assert.equal(coins,180,'expected guide coin count after physics witness');
+assert.equal(coins,374,'expected denser guide coin count after physics witness');
 // Guard against visually impressive but mechanically optional elevated routes.
 // Deleting either of the first two jumps must now make the relay/tunnel impassable,
 // across low, mid and capped running speed. A missing jump used to be survivable.

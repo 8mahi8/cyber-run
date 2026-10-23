@@ -16,5 +16,11 @@
 5. `tests/twin-halo-accessibility.test.js` を追加し、低速から最高速で各リングの必要性、元のリングサイズの後方互換性、1回目のジャンプの±140ms、2回目の空中ジャンプの−80ms〜＋100msずれを検証。
 6. GitHub Pagesでのみ試すため、新しい独立ファイル `main:playtest-v27/index.html` を作成。想定URL：`https://8mahi8.github.io/cyber-run/playtest-v27/`。既存V0.11 `/playtest-v26/` と学校Google Sites版は変えない。
 
+## 実証済み結果
+- GitHub Actionsの通常・衝突・コース品質自動テスト **92/92成功**（run **40038144904**）。
+- Chromiumブラウザで固定版・旧無限版・**V0.12のmain実体単一HTML**を順番に実行したワークフローも**全工程成功**（run **40038144802**）。V0.12で**220秒 / 6,630フレーム / 約24,071m / HP3/3 / ラン継続 / 例外・故障0**。
+- ジャンプ力 `FIRST_JUMP/SECOND_JUMP` は未変更。旧リング `44×34px` の後方互換性、TWIN HALOの第1ジャンプ±140ms、第2ジャンプ−80ms〜＋100msの入力ずれ、各リング必須性を回帰テストで検証。
+- ※外部公開URL `https://8mahi8.github.io/cyber-run/playtest-v27/` の実HTTP応答は現在の検証環境で確認できないため、本人による端末アクセス確認が必要。
+
 ## 注意
 自動テストでの通過は本人のiPad Safariでの操作感を保証しない。「水色リングに届きやすくなったか」「リング間の空中ジャンプ操作が直感的か」の本人評価を最優先とする。Google Sitesに直接貼り付ける作業は今回は実施しない。

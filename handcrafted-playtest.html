@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#070d20">
+<title>CYBER RUN — THE CIRCUIT | 手作りチャレンジ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game" aria-label="CYBER RUN game"></canvas>
+<header id="hud" aria-live="off">
+  <div class="metric"><span>DISTANCE</span><strong id="score">0</strong><small id="best">BEST 0 m</small></div>
+  <div class="center-hud"><div id="hearts">♥ ♥ ♥</div><div id="region">NEON CITY</div></div>
+  <div class="metric right"><span>SPEED</span><strong id="speed">1.0×</strong><small id="distance">GROUND FLOW</small></div>
+</header>
+<div id="controls"><button id="duck" class="control duck" aria-label="しゃがむ">しゃがむ</button><button id="jump" class="control jump" aria-label="ジャンプ">ジャンプ</button></div>
+<button id="pause" aria-label="一時停止">Ⅱ</button>
+<div id="overlay" role="dialog" aria-modal="true"><section id="panel">
+  <div class="eyebrow">CHALLENGE 01 / HAND-AUTHORED MAP</div>
+  <h1>CYBER <em>RUN</em></h1>
+  <p id="message">全20セクションの固定高難度マップ。地形を覚え、連続操作を磨いてGOALまで走り切れ。</p>
+  <p class="hint">ジャンプ：右ボタンを2回までタップ<br>しゃがみ：左ボタンを長押し<br>キーボード：↑ / Space、↓</p>
+  <button id="primary">RUN START</button>
+  <div class="sub">約65秒の手作りコース ／ 自動生成・オンラインランキングなし</div>
+</section></div>
+<script src="core.js"></script><script src="stickman.js"></script><script src="handcrafted-level.js"></script><script src="game-handcrafted.js"></script>
+</body></html>

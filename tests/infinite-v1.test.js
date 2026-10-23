@@ -1,7 +1,7 @@
 'use strict';
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
-const C=require('../core.js'),H=require('../handcrafted-level-v2.js'),I=require('../infinite-level-v1.js');
+const C=require('../core.js'),H=require('../handcrafted-level-v2.js'),E=require('../extra-motifs-v1.js'),I=require('../infinite-level-v1.js');
 function generate(seed,hp=3,limit=305){
  const gen=I.makeGenerator(seed);
  const start=580;
@@ -12,7 +12,8 @@ function generate(seed,hp=3,limit=305){
   assert(route.ok,'unpassable chunk at '+t.toFixed(2)+'s / '+seg.type);
   assert(seg.length>0&&seg.pickups.length>=5,'missing scoreless guidance');
   assert(seg.pickups.every(p=>p.kind==='guide-coin'||p.kind==='heart'));
-  assert(seg.authoredLabel===H.SECTIONS[seg.authoredSection].title);
+  const section=seg.authoredSection<H.totalSections?H.SECTIONS[seg.authoredSection]:E.SECTIONS[seg.authoredSection-H.totalSections];
+  assert(seg.authoredLabel===section.title);
   assert.equal(seg.sequenceNumber,segments.length);
   segments.push(seg);
   t+=seg.pattern.duration;x+=seg.length;
@@ -42,7 +43,7 @@ test('deep-run danger increases in sustained action chains beyond speed cap',()=
  const actions=s=>s.script.filter(e=>e[1]==='jump'||e[1]==='duck-on').length;
  const density=xs=>xs.reduce((v,s)=>v+actions(s),0)/xs.reduce((v,s)=>v+s.pattern.duration,0);
  assert(density(deep)>density(early),'deep chains need denser distinct actions');
- const expert=new Set([9,12,13,15]),ordered=a.filter(s=>s.seconds>220).map(s=>s.authoredSection);
+ const expert=new Set([9,12,13,15,16,17,18]),ordered=a.filter(s=>s.seconds>220).map(s=>s.authoredSection);
  let longest=0,run=0;
  for(const id of ordered){run=expert.has(id)?run+1:0;longest=Math.max(longest,run)}
  assert(longest>=4,'endgame requires repeated expert chains with sustained pressure');

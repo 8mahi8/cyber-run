@@ -11,7 +11,12 @@
  if(!C)throw Error('CYBER RUN core missing');
  // Fixed warm-up occupies ~8.3s of obstacles after the short initial lead-in
  // (roughly 9.7s from RUN START). Remaining motifs test learned action chains.
- const CUSTOM=Object.freeze({'skyline-exit':{
+ const CUSTOM=Object.freeze({'spring-pressure':{
+  name:'spring-pressure',theme:'SPRING PRESSURE',duration:3.8,weight:0,
+  script:[[1.19,'duck-on'],[1.69,'duck-off'],[2.03,'duck-on'],[2.73,'duck-off'],[2.91,'jump']],
+  pads:[[.31,46]],platforms:[[.81,1.68,110]],
+  hazards:[[.80,'tall'],[1.48,'platform-bar',0],[2.40,'duck-gate'],[3.20,'low']],gaps:[]
+ },'skyline-exit':{
   name:'skyline-exit',theme:'SKYLINE EXIT',duration:4.5,weight:0,
   script:[[.19,'jump'],[.89,'jump'],[2.83,'duck-on'],[3.38,'duck-off'],[3.56,'jump']],
   platforms:[[.46,1.19,75],[1.32,2.1,142]],
@@ -34,6 +39,7 @@
   ['TWO-STEP SKY','sky-stepduck','MOTIF B','二段足場 → 空中の高さ変化 → 着地'],
   ['FRAGILE STEP','fracture-hop','MOTIF C','崩れる足場を踏み切る'],
   ['RING VAULT','orb-leap','MOTIF D','空中リング → 長めの空中横断'],
+  ['SPRING PRESSURE','spring-pressure','MOTIF SPRING','バネで上段 → しゃがむ → 地上へ落下 → 必須しゃがみ → ジャンプ'],
   ['PULSE DRONE','pulse-drone','MOTIF E','移動障害物 → 跳ぶ → 通路'],
   ['SKYLINE EXIT','skyline-exit','CHAIN SKY','高台2段を登る → 降下 → 必須しゃがみ → 最後にジャンプ'],
   ['FRACTURE SHUTTER','fracture-shutter','CHAIN A','崩落 → 着地後の必須しゃがみ'],

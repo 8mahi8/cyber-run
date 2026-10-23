@@ -60,5 +60,13 @@ test('Chromium V2 smoke: canvas, coin, start and pause',{timeout:40000},async t=
   assert.deepEqual(route.faults,[]);
   assert.deepEqual(errors,[],'browser runtime errors');
   console.log('PASS full Chrome V2 scripted route: '+JSON.stringify(route));
+  // Retrying after a clear must fully reset HP and obstacles; intentionally
+  // provide no input to check the ordinary three-hit loss/retry flow.
+  const failed=await ev("(()=>{\n const qa=window.__v2qa;qa.base=performance.now();\n document.getElementById('primary').click();\n const startHp=document.getElementById('hearts').textContent;\n const step=1000/30;let frames=0,last=0;\n for(let f=1;f<=900;f++){\n   const next=qa.tasks.entries().next();\n   if(next.done)break;\n   const [id,fn]=next.value;qa.tasks.delete(id);\n   fn(qa.base+f*step);frames++;\n   if(!document.getElementById('overlay').classList.contains('hidden')){last=f*step/1000;break}\n }\n return {frames,startHp,endedAt:last,over:!document.getElementById('overlay').classList.contains('hidden'),\n  message:document.getElementById('message').textContent,\n  hp:document.getElementById('hearts').textContent};\n})()");
+  assert.match(failed.startHp,/♥ ♥ ♥/,'retry should reset HP: '+JSON.stringify(failed));
+  assert(failed.over&&failed.endedAt>0,'no-input run must terminate: '+JSON.stringify(failed));
+  assert.match(failed.message,/走破/,'loss screen missing: '+JSON.stringify(failed));
+  assert.deepEqual(errors,[],'browser runtime errors after retry');
+  console.log('PASS Chrome V2 game-over and restart: '+JSON.stringify(failed));
  }finally{try{ws?.close()}catch(_){}if(browser.exitCode===null){browser.kill('SIGTERM');await Promise.race([once(browser,'exit').catch(()=>{}),pause(2000)])}server.close();try{fs.rmSync(tmp,{recursive:true,force:true,maxRetries:3,retryDelay:100})}catch(err){console.warn('Chrome profile cleanup deferred:',err.code)}}
 });

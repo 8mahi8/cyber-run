@@ -57,5 +57,5 @@ test('Chromium V2 smoke: canvas, coin, start and pause',{timeout:40000},async t=
   await until(()=>ev("document.getElementById('overlay').classList.contains('hidden')"));
   assert.deepEqual(errors,[],'browser runtime errors');
   console.log('PASS Chromium V2: start, guide coins, score, pause/resume');
- }finally{try{ws?.close()}catch(_){}if(browser.exitCode===null){browser.kill('SIGTERM');await Promise.race([once(browser,'exit').catch(()=>{}),pause(2000)])}server.close();fs.rmSync(tmp,{recursive:true,force:true,maxRetries:12,retryDelay:80})}
+ }finally{try{ws?.close()}catch(_){}if(browser.exitCode===null){browser.kill('SIGTERM');await Promise.race([once(browser,'exit').catch(()=>{}),pause(2000)])}server.close();try{fs.rmSync(tmp,{recursive:true,force:true,maxRetries:3,retryDelay:100})}catch(err){console.warn('Chrome profile cleanup deferred:',err.code)}}
 });

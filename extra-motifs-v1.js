@@ -28,7 +28,9 @@
    title:'TWIN HALO',chapter:'LATE',objective:'1つ目の空中リング→2段ジャンプ→2つ目のリング→長い穴を越え→しゃがむ',
    pattern:{name:'extra-twin-halo',theme:'DOUBLE REBOUND',duration:4.20,
     script:[[.17,'jump'],[1.10,'jump'],[3.08,'duck-on'],[3.70,'duck-off']],
-    pads:[[.80,44,95,'airboost'],[1.90,90,200,'airboost']],
+    // The larger, visibly oval rings keep both rebound actions necessary,
+    // while allowing a realistic thumb-response window on fast iPad runs.
+    pads:[[.80,100,90,'airboost',64],[1.95,140,200,'airboost',85]],
     gaps:[[1.45,2.275,'seconds']],hazards:[[3.43,'duck-gate']],platforms:[]}
   },
   {

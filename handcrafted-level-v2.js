@@ -103,5 +103,5 @@
   seg.pickups.push(...makeGuideCoins(seg));
   return seg;
  }
- return Object.freeze({SECTIONS,makeSection,totalSections:SECTIONS.length,title:'CIRCUIT STUDY · V2'});
+ return Object.freeze({SECTIONS,makeSection,makeGuideCoins,totalSections:SECTIONS.length,title:'CIRCUIT STUDY · V2'});
 });

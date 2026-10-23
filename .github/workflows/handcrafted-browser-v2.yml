@@ -5,6 +5,7 @@ on:
       - 'tools/browser-handcrafted-v2.cjs'
       - 'tools/browser-handcrafted-v2-fullrun.cjs'
       - 'tools/browser-google-sites-draft-v22.cjs'
+      - 'tools/browser-pages-v23.cjs'
       - 'cyber-run-v22-google-sites-draft.html'
       - 'handcrafted-level-v2.js'
       - 'game-handcrafted-v2.js'
@@ -17,6 +18,7 @@ on:
       - 'tools/browser-handcrafted-v2.cjs'
       - 'tools/browser-handcrafted-v2-fullrun.cjs'
       - 'tools/browser-google-sites-draft-v22.cjs'
+      - 'tools/browser-pages-v23.cjs'
       - 'cyber-run-v22-google-sites-draft.html'
       - 'handcrafted-level-v2.js'
       - 'game-handcrafted-v2.js'
@@ -38,3 +40,14 @@ jobs:
         run: node --test tools/browser-handcrafted-v2-fullrun.cjs
       - name: Run direct-code standalone embed from start through clear and retry
         run: node --test tools/browser-google-sites-draft-v22.cjs
+      - name: Read real GitHub Pages source from main without changing source branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: _preview_main
+      - name: Stage exact main-branch preview for isolated browser test
+        run: |
+          mkdir -p playtest-v23
+          cp _preview_main/playtest-v23/index.html playtest-v23/index.html
+      - name: Full V2.3 GitHub Pages artifact smoke (main source)
+        run: node --test tools/browser-pages-v23.cjs

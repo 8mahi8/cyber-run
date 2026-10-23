@@ -1,5 +1,8 @@
 # CYBER RUN｜短縮チャット用の詳細引き継ぎ（2026-10-23）
 
+> **最新 V0.11（2026-10-24）**：V0.10は19種類まで拡充し、今回は長距離の単調さと安定性を改善。旧生成器を4シード×230区間調べると同じ「高台ジャンプ」系が**最長10区間連続**していた。 `infinite-level-v1.js` に7種類の操作ファミリーと直近2区間のパターン履歴を使った抽選を導入、12シード×220区間の検証で**同じ系統の連続と A→B→A の連発を解消**。難度帯・固定準備運動・ギミック数19種類は維持。さらに長時間プレイで `runner.fragileTimes` / `runner.airBoosts` に古いIDが蓄積する問題を、5秒ごとの画面外記録整理で修正。仮想2,000区間の記録保持テストを追加。通常CI **91/91成功**（run 40035431805）。本人用の新しい比較試遊HTMLを**mainの別フォルダ `playtest-v26/index.html`** に追加。想定試遊URL：**https://8mahi8.github.io/cyber-run/playtest-v26/**。旧V0.10 `/playtest-v25/`、固定試遊 `/playtest-v23/`、学校Google Sites版は変更していない。専用Chromiumのmain実体220秒検証は別途 `tools/browser-pages-v26.cjs`、詳細は [INFINITE_V011_2026-10-24.md](./INFINITE_V011_2026-10-24.md)。実配信URLと学校iPad Safariの動作は本人の試遊確認待ち。**GitHub Pages＝本人試遊、Google Sites＝友達公開**を厳守。
+
+
 > **最新 V0.10（2026-10-24）**：ユーザーはV0.9の無限ランを「だいぶいい感じ、あと少しギミック／パターンを増やせば完成に近い」と評価。そこで**固定16区間は変えず**に、無限ラン専用の新パターンを3種類追加：ID16 SPRING CATWALK（バネ→崩落高台→脱出→しゃがみ）、ID17 TWIN HALO（**空中リング2個が両方必須**の長い穴）、ID18 SHATTER RELAY（崩落する高台の連続操作）。新コード `extra-motifs-v1.js` を `infinite-level-v1.js` の抽選候補へ統合、60秒以降と最奥の上級難易度で出やすい。旧V0.9の `/playtest-v24/` は残し、新しい独立HTML `main:playtest-v25/index.html` を作成。想定GitHub Pages試遊URLは **https://8mahi8.github.io/cyber-run/playtest-v25/**（外部HTTP配信は本人確認待ち）。通常CI**87/87成功**（run 39984577843）、Chromiumの新旧試遊ソース含む検証も全成功（run 39984577824）。特に**V0.10のmain上の単一HTMLを220秒、約24,066m、HP3/3でノーダメージ走行**。新規パターンは速度帯0〜270秒／正逆±80msズレの通過と必須ギミックの省略失敗を検証。低速で早いしゃがみ解除が不公平になるケースが見つかったため、SHATTER RELAYの最初のシャッター位置を微調整した。**GitHub Pages＝本人試遊、Google Sites＝学校公開**。Google Sites・既存試遊ページ・ランキングは変更なし。詳細：[INFINITE_V010_2026-10-24.md](./INFINITE_V010_2026-10-24.md)。
 
 

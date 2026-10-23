@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - 'tools/browser-handcrafted-v2.cjs'
+      - 'tools/browser-handcrafted-v2-fullrun.cjs'
       - 'handcrafted-level-v2.js'
       - 'game-handcrafted-v2.js'
       - 'handcrafted-playtest-v2.html'
@@ -12,6 +13,7 @@ on:
       - dev/handcrafted-circuit-01-20261023
     paths:
       - 'tools/browser-handcrafted-v2.cjs'
+      - 'tools/browser-handcrafted-v2-fullrun.cjs'
       - 'handcrafted-level-v2.js'
       - 'game-handcrafted-v2.js'
       - 'handcrafted-playtest-v2.html'
@@ -28,3 +30,5 @@ jobs:
           node-version: 22
       - name: Headless Chromium playtest smoke
         run: node --test tools/browser-handcrafted-v2.cjs
+      - name: Full-length scripted run in real Chromium
+        run: node --test tools/browser-handcrafted-v2-fullrun.cjs

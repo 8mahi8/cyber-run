@@ -5,6 +5,7 @@ if(!H)throw Error('Handcrafted course data is missing');
 const C=window.CyberRunCore,canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false}),$=id=>document.getElementById(id);if(!ctx||!C||!Stick){$('message').textContent='ゲームを初期化できませんでした。';return}
 const ui={overlay:$('overlay'),msg:$('message'),start:$('primary'),score:$('score'),best:$('best'),distance:$('distance'),speed:$('speed'),hearts:$('hearts'),region:$('region'),duck:$('duck'),jump:$('jump')};
 let nextHandcraftedIndex=0,goalX=Infinity,infiniteGenerator=null;
+let physicsPruneClock=0;
 let viewW=960,viewH=540,s=1,dpr=1,ground=C.GROUND,state='menu',runner=null,segments=[],hazards=[],gaps=[],platforms=[],pads=[],pickups=[],seed=0,rng=null,spawnCursor=0,elapsed=0,travel=0,invuln=0,rescue=0,nextFrame=0,lastFrame=0,gameId=0,duckHeld=false,jumpQueued=false,localBest=0,currentRegion='NEON CITY',currentTheme='GROUND FLOW',previousCourse=null,floaters=[],trail=[],hitPulse=0,effects=[],jumpFlash=0,landFlash=0,boostFlash=0,flowFlash=0,cleanFlash=0,lastClean=-100,hudAccumulator=0,lastTheme='GROUND FLOW',gaitPhase=0,cleanStreak=0,streakFlash=0;
 try{localBest=Number(localStorage.getItem('cyber-run-infinite-v01-best'))||0}catch(_){/* storage may be blocked */}
 function resize(){
@@ -44,7 +45,7 @@ function playerRect(){return C.rectAt(runner.x+C.HITBOX_OFFSET_X,runner.bottom,r
 function isOnGround(){return C.isSupported(runner)}
 function jump(){if(state!=='running')return;jumpQueued=true}
 function setDuck(value){if(!runner)return;duckHeld=!!value&&state==='running';runner.duck=duckHeld&&isOnGround()&&runner.jumps===0;ui.duck.classList.toggle('pressed',duckHeld)}
-function start(){nextHandcraftedIndex=0;goalX=Infinity;gameId++;seed=(Number.isInteger(window.CYBER_RUN_TEST_SEED)?window.CYBER_RUN_TEST_SEED:((Date.now()^Math.floor(performance.now()*10000))>>>0))||1;rng=C.randomizer(seed);infiniteGenerator=H.makeGenerator(seed);runner=makeRunner();segments=[];hazards=[];gaps=[];platforms=[];pads=[];pickups=[];spawnCursor=runner.x+C.speedAt(0)*1.45;elapsed=0;travel=0;invuln=0;rescue=0;duckHeld=false;jumpQueued=false;previousCourse=null;state='running';floaters=[];trail=[];effects=[];jumpFlash=0;landFlash=0;boostFlash=0;flowFlash=0;lastTheme='GROUND FLOW';gaitPhase=0;cleanStreak=0;streakFlash=0;cleanFlash=0;lastClean=-100;hudAccumulator=0;hitPulse=0;ui.start.textContent='もう一回';ui.overlay.classList.add('hidden');ui.best.textContent='BEST '+localBest.toLocaleString()+' m';lastFrame=performance.now();cancelAnimationFrame(nextFrame);nextFrame=requestAnimationFrame(frame)}
+function start(){nextHandcraftedIndex=0;goalX=Infinity;gameId++;seed=(Number.isInteger(window.CYBER_RUN_TEST_SEED)?window.CYBER_RUN_TEST_SEED:((Date.now()^Math.floor(performance.now()*10000))>>>0))||1;rng=C.randomizer(seed);infiniteGenerator=H.makeGenerator(seed);runner=makeRunner();physicsPruneClock=0;segments=[];hazards=[];gaps=[];platforms=[];pads=[];pickups=[];spawnCursor=runner.x+C.speedAt(0)*1.45;elapsed=0;travel=0;invuln=0;rescue=0;duckHeld=false;jumpQueued=false;previousCourse=null;state='running';floaters=[];trail=[];effects=[];jumpFlash=0;landFlash=0;boostFlash=0;flowFlash=0;lastTheme='GROUND FLOW';gaitPhase=0;cleanStreak=0;streakFlash=0;cleanFlash=0;lastClean=-100;hudAccumulator=0;hitPulse=0;ui.start.textContent='もう一回';ui.overlay.classList.add('hidden');ui.best.textContent='BEST '+localBest.toLocaleString()+' m';lastFrame=performance.now();cancelAnimationFrame(nextFrame);nextFrame=requestAnimationFrame(frame)}
 function pause(){if(state==='running'){state='paused';cancelAnimationFrame(nextFrame);nextFrame=0;ui.msg.textContent='一時停止中';ui.start.textContent='再開';ui.overlay.classList.remove('hidden');setDuck(false)}else if(state==='paused'){resume()}}
 function resume(){if(state!=='paused')return;cancelAnimationFrame(nextFrame);nextFrame=0;state='running';ui.overlay.classList.add('hidden');lastFrame=performance.now();nextFrame=requestAnimationFrame(frame)}
 ui.start.addEventListener('click',()=>state==='paused'?resume():start());$('pause').addEventListener('click',pause);
@@ -126,6 +127,8 @@ function step(dt){
   }}
  hazards=hazards.filter(h=>h.x+h.w>-40);gaps=gaps.filter(g=>g.x+g.w>-40);pickups=pickups.filter(item=>!item.taken&&item.x>-40);
  platforms=platforms.filter(p=>p.x+p.w>-40);pads=pads.filter(p=>p.x+p.w>-40);segments=segments.filter(a=>a.x+a.length>-40);
+ physicsPruneClock+=dt;
+ if(physicsPruneClock>=5){physicsPruneClock=0;H.pruneExpiredPhysics(runner,platforms,pads)}
  createAhead();currentRegion=elapsed<35?'NEON CITY':elapsed<110?'MACHINE DISTRICT':'ENERGY TUNNEL';
  const upcoming=segments.find(a=>a.x+a.length>runner.x+C.HITBOX_OFFSET_X);
  if(upcoming){currentTheme=upcoming.authoredLabel||upcoming.theme;

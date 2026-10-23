@@ -6,17 +6,18 @@
  */
 (function(root,factory){
  const api=factory(root.CyberRunCore||(typeof require==='function'?require('./core.js'):null),
-  root.CyberRunHandcrafted||(typeof require==='function'?require('./handcrafted-level-v2.js'):null));
+  root.CyberRunHandcrafted||(typeof require==='function'?require('./handcrafted-level-v2.js'):null),
+  root.CyberRunExtraMotifs||(typeof require==='function'?require('./extra-motifs-v1.js'):null));
  if(typeof module==='object'&&module.exports)module.exports=api;
  root.CyberRunInfinite=api;
-})(typeof globalThis!=='undefined'?globalThis:this,function(C,H){
+})(typeof globalThis!=='undefined'?globalThis:this,function(C,H,EXTRA){
  'use strict';
- if(!C||!H)throw Error('CYBER RUN core and authored motifs are required');
+ if(!C||!H||!EXTRA)throw Error('CYBER RUN core, authored motifs and extra motifs are required');
  const WARMUP=[0,1,2]; // unchanged V2.3.1 9.75-second rhythm.
  const EARLY=[3,4,5,6,7,8];
- const MIDDLE=[3,4,7,8,9,10,11,12,13,14];
- const ADVANCED=[8,9,10,11,12,13,14,15];
- const EXPERT=[9,12,13,15];
+ const MIDDLE=[3,4,7,8,9,10,11,12,13,14,16];
+ const ADVANCED=[8,9,10,11,12,13,14,15,16,17,18];
+ const EXPERT=[9,12,13,15,16,17,18];
  const REST=[4,7,9,10,14]; // still active gameplay, not a long blank.
  const TITLES=['WARMUP','BUILD','COMBO','PRESSURE','EXPERT','ENDURANCE'];
  function tierAt(seconds){
@@ -81,12 +82,12 @@
     // Guard the same section from starting immediately twice.
     if(index===lastId){index=choose((tierAt(seconds)>=4?EXPERT:MIDDLE).filter(id=>id!==lastId),rng)}
    }
-   const segment=H.makeSection(index,x,seconds);
+   const segment=index<H.totalSections?H.makeSection(index,x,seconds):EXTRA.makeSection(index,x,seconds);
    // H.makeSection itself certifies a safe physics route while placing coins.
    segment.sequenceNumber=count;
    segment.difficulty=pressureAt(seconds);
    segment.authoredSection=index;
-   segment.authoredLabel=H.SECTIONS[index].title;
+   segment.authoredLabel=index<H.totalSections?H.SECTIONS[index].title:EXTRA.SECTIONS[index-H.totalSections].title;
    segment.infinite=true;
    // The only randomized non-score collectible is a rare accessible heart,
    // never a required route waypoint or a groundless trap.

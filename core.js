@@ -181,7 +181,16 @@ function buildPattern(x,seconds,speed,pattern,rng,riff=0){
    'platform-bar':[65,28,GROUND-(pattern.platforms?.[extra]?.[2]||80)-62]};
   const [w,h,y]=sz[kind];hazards.push({x:x+distance(at+timingShift)-w/2,y,w,h,kind,phase:0});
  }
- const pads=(pattern.pads||[]).map(([at,width,height,kind],i)=>({id:pattern.name+':'+Math.round(seconds*1000)+':pad:'+i,x:x+distance(at)-width/2,w:width,y:kind==='airboost'?GROUND-height:GROUND,h:kind==='airboost'?34:10,kind:kind||'spring'}));
+ // The optional fifth ring argument specifies its visible AND physical
+ // diameter-height. Keep its vertical centre fixed relative to old 34px rings;
+ // existing rings/springs retain their original geometry when omitted.
+ const pads=(pattern.pads||[]).map(([at,width,height,kind,ringHeight],i)=>{
+  const ring=kind==='airboost',h=ring?(ringHeight||34):10;
+  return {id:pattern.name+':'+Math.round(seconds*1000)+':pad:'+i,
+   x:x+distance(at)-width/2,w:width,
+   y:ring?GROUND-height-(h-34)/2:GROUND,
+   h,kind:kind||'spring'};
+ });
  const gaps=(pattern.gaps||[]).map(([at,width,unit])=>{const w=unit==='seconds'?distance(at+width/2)-distance(at-width/2):width;return{x:x+distance(at)-w/2,w}});
  return {type:pattern.name,theme:pattern.theme,x,length:distance(duration),seconds,speed,hazards,gaps,platforms,pads,pickups:[],script:pattern.script,pattern,riff};
 }

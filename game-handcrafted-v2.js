@@ -86,8 +86,9 @@ function step(dt){
  if(runner.support!==null&&!runner.duck)gaitPhase+=(18+17*Math.min(1,(speed-C.BASE_SPEED)/(C.MAX_SPEED-C.BASE_SPEED)))*dt;
  for(const list of [hazards,gaps,pickups,segments,platforms,pads])for(const obj of list)obj.x-=move;
  for(const h of hazards)if(h.kind==='moving')h.y=ground-87+Math.sin(elapsed*3.5+h.phase)*27;
- const before=playerRect(),overHole=gaps.some(g=>C.intersectsGap(before,g));
- if(overHole&&runner.support==='ground'&&rescue<=0){hit();rescue=1.0}
+ // The edge of a gap is not a damage hitbox. Physics removes ground support
+ // when the player truly runs over a hole; falling below ground costs HP.
+ // Jumping from the lip must not be punished before physics processes input.
  // Keep the runner anchored at its screen x; world elements scroll left.
  const previousSupport=runner.support,previousVy=runner.vy,requested=jumpQueued;
  C.physicsStep(runner,dt,runner.x,platforms,gaps,duckHeld,jumpQueued,elapsed,rescue,pads);

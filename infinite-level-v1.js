@@ -52,12 +52,14 @@
    let candidates=pool.filter(id=>id!==previous);
    if(!candidates.length)candidates=pool.slice();
    // Prefer a different family whenever the pool offers one.
+   // Don't return to exactly the same motif after only one other section.
+   // This restriction is stronger than the family preference: at deep speeds
+   // the expert pool has several singleton mechanics (ring, spring, rhythm).
+   const recent=[...history,...planned].slice(-2);
+   const fresh=candidates.filter(id=>!recent.includes(id));
+   if(fresh.length)candidates=fresh;
    const otherFamily=candidates.filter(id=>familyOf(id)!==familyOf(previous));
    if(otherFamily.length)candidates=otherFamily;
-   // Prevent an identical pattern reappearing after only one intervening section,
-   // while never restricting a pool so hard that it cannot yield a valid section.
-   const fresh=candidates.filter(id=>!history.includes(id)&&!planned.includes(id));
-   if(fresh.length)candidates=fresh;
    return choose(candidates,rng);
   }
   function refill(seconds){
@@ -96,9 +98,9 @@
     if(!queue.length)refill(seconds);
     index=queue.shift();
     // Guard the same section from starting immediately twice.
-    if(index===lastId||familyOf(index)===familyOf(lastId)){
-     // This should not trigger with a correctly filled queue; fail safe for
-     // future changes to tier pools or externally supplied pattern lists.
+    if(index===lastId){
+     // Exact immediate repetition should remain impossible even if a future
+     // pool change creates a constrained two-item block.
      index=pick(tierAt(seconds)>=4?EXPERT:tierAt(seconds)>=3?ADVANCED:tierAt(seconds)>=2?MIDDLE:EARLY);
     }
    }

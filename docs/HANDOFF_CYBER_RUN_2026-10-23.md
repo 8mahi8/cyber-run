@@ -1,5 +1,7 @@
 # CYBER RUN｜短縮チャット用の詳細引き継ぎ（2026-10-23）
 
+> **ブラウザ全行程テスト追加（2026-10-23）**：開発ブランチV2.2の16区間を **73入力・55.1秒・HP3/3・3,713mでノーダメージクリア**、クリア後リトライ→無操作ゲームオーバーも成功（GitHub Actions run 39965358405）。道標コイン全180個について、予定軌道上で取得可能・ハザードに重ならないことを別途テストし、通常CIは78/78成功（run 39965358416）。`tools/browser-handcrafted-v2-fullrun.cjs`を専用CIから実行。**人間の試遊・学校iPad Safari、面白さ評価は未確認。** 詳細は [V2研究レポート](./HANDCRAFTED_V2_STUDY_REPORT_2026-10-23.md)。
+
 > **最新の開発状況（V2.2）**：開発ブランチの研究用固定コースは **16区間・約55.11秒・道標コイン180個**。新規手作り連携「SPRING PRESSURE」はバネ床が必須（バネを消すと衝突することをテスト済み）。物理・品質テスト **78/78成功**（GitHub Actions run 39961708004）、Chromium基本操作・描画テスト **1/1成功**（run 39961708078）。**人間の通し試遊・学校iPad Safari・無限生成への移行は未完**。詳細は [HANDCRAFTED_V2_STUDY_REPORT_2026-10-23.md](./HANDCRAFTED_V2_STUDY_REPORT_2026-10-23.md)。これより下のV2.1以前の数値を現行と混同しない。
 
 > **同日後半・開発記録追加**：新設計の技術試作 `handcrafted-level-v2.js`、`game-handcrafted-v2.js`、`handcrafted-playtest-v2.html` と `tests/handcrafted-v2.test.js` を開発ブランチに追加。**V2.1：15区間／約51.31秒／案内コイン167個／固定準備運動約9.75秒**。新規手作り複合区間 SWITCHBACK RELAY・SKYLINE EXIT・TUNNEL BRIDGE を含む。120Hz連結・軽い入力ズレの物理シミュレーションは通過。**Chromiumの描画・操作スモーク成功（run 39960219674）、通常CI 78/78成功。学校iPad Safari・人間の試遊・実機目視は未検証、GitHub Pages未配置、既存公開版変更なし。** 詳細と制約は [HANDCRAFTED_V2_STUDY_REPORT_2026-10-23.md](./HANDCRAFTED_V2_STUDY_REPORT_2026-10-23.md)。この進捗が下記の「まず設計案を議論」「実装前」の旧記載に優先。

@@ -11,7 +11,17 @@
  if(!C)throw Error('CYBER RUN core missing');
  // Fixed warm-up occupies ~8.3s of obstacles after the short initial lead-in
  // (roughly 9.7s from RUN START). Remaining motifs test learned action chains.
- const CUSTOM=Object.freeze({'relay-bridge':{
+ const CUSTOM=Object.freeze({'skyline-exit':{
+  name:'skyline-exit',theme:'SKYLINE EXIT',duration:4.5,weight:0,
+  script:[[.19,'jump'],[.89,'jump'],[2.83,'duck-on'],[3.38,'duck-off'],[3.56,'jump']],
+  platforms:[[.46,1.19,75],[1.32,2.1,142]],
+  hazards:[[.81,'low'],[1.81,'low'],[3.12,'duck-gate'],[3.90,'low']],gaps:[],pads:[]
+ },'tunnel-bridge':{
+  name:'tunnel-bridge',theme:'TUNNEL BRIDGE',duration:4.32,weight:0,
+  script:[[.13,'duck-on'],[.61,'duck-off'],[.77,'jump'],[1.57,'jump'],[2.81,'duck-on'],[3.34,'duck-off'],[3.55,'jump']],
+  platforms:[[1.04,1.65,77],[1.70,2.53,125]],
+  hazards:[[.43,'duck-gate'],[3.06,'duck-gate'],[3.83,'low']],gaps:[],pads:[]
+ },'relay-bridge':{
   name:'relay-bridge',theme:'SWITCHBACK RELAY',duration:4.4,weight:0,
   script:[[.12,'duck-on'],[.56,'duck-off'],[.72,'jump'],[1.59,'jump'],[2.67,'duck-on'],[3.16,'duck-off'],[3.36,'jump']],
   platforms:[[1.06,1.83,77]],hazards:[[.42,'duck-gate'],[2.96,'duck-gate'],[3.68,'low']],gaps:[],pads:[]
@@ -25,9 +35,11 @@
   ['FRAGILE STEP','fracture-hop','MOTIF C','崩れる足場を踏み切る'],
   ['RING VAULT','orb-leap','MOTIF D','空中リング → 長めの空中横断'],
   ['PULSE DRONE','pulse-drone','MOTIF E','移動障害物 → 跳ぶ → 通路'],
+  ['SKYLINE EXIT','skyline-exit','CHAIN SKY','高台2段を登る → 降下 → 必須しゃがみ → 最後にジャンプ'],
   ['FRACTURE SHUTTER','fracture-shutter','CHAIN A','崩落 → 着地後の必須しゃがみ'],
   ['BROKEN CIRCUIT','fracture-rebound-gate','CHAIN B','崩落 → リング → 必須しゃがみ'],
   ['SWITCHBACK RELAY','relay-bridge','CHAIN C','しゃがみ→高台着地→再跳躍→着地しゃがみ→最後の跳躍'],
+  ['TUNNEL BRIDGE','tunnel-bridge','CHAIN BRIDGE','しゃがみ→中段着地→上段着地→落下してしゃがみ→ジャンプ'],
   ['RING TO CRAWL','orb-gate','CHAIN D','空中リング → 着地後の必須しゃがみ'],
   ['FINAL RHYTHM','overdrive-rhythm','CHAIN E','高密度連続アクション',[1.07,3.45]]
  ];

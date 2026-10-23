@@ -20,6 +20,26 @@ for(let i=0;i<H.totalSections;i++){
  const replay=C.replayPattern(s,{trace:true});
  assert(replay.ok,'standalone witnessed physics failed: '+s.type);
  assert(s.pickups.length>=5,'empty coin trail: '+s.type);
+ // Every guide coin must be collectable on the certified route without
+ // overlapping a hazard silhouette. Coins are guidance, not random decoration.
+ for(const coin of s.pickups){
+  let witness=replay.route[0],best=Infinity;
+  for(const tick of replay.route){
+   const dx=Math.abs(tick.worldX+C.HITBOX_OFFSET_X+C.BODY_W/2-coin.x);
+   if(dx<best){best=dx;witness=tick}
+  }
+  const midX=witness.worldX+C.HITBOX_OFFSET_X+C.BODY_W/2;
+  const midY=witness.bottom-(witness.duck?C.DUCK_H/2:C.STAND_H/2);
+  assert(Math.hypot(midX-coin.x,midY-coin.y)<=coin.r+17,
+   'guide coin not collectable along certified safe movement: '+s.type);
+  for(const hazard of s.hazards){
+   const rect=C.hazardAt(hazard,s.seconds+witness.time);
+   const dx=Math.max(rect.x-coin.x,0,coin.x-rect.x-rect.w);
+   const dy=Math.max(rect.y-coin.y,0,coin.y-rect.y-rect.h);
+   assert(Math.hypot(dx,dy)>=coin.r,
+    'guide coin overlaps hazard: '+s.type+' '+hazard.kind);
+  }
+ }
  for(const coin of s.pickups){
   assert.equal(coin.kind,'guide-coin');
   assert.equal(coin.taken,false);

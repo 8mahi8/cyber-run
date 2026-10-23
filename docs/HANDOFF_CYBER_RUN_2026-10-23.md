@@ -1,5 +1,8 @@
 # CYBER RUN｜短縮チャット用の詳細引き継ぎ（2026-10-23）
 
+> **最新 2026-10-23 / V2.3.1：本人試遊を受けた修正**：単調さの改善は好評、序盤の難易度は維持。コインが疎らすぎたため **180→374個、約84pxおき**の距離基準案内へ。穴の縁に少し入っただけでHPが減る不具合は、**先行 `hit()` を削除**して画面下へ実際に落下（bottom>ground+112）した時だけダメージに変更。穴の縁からジャンプ可能な状態なら被弾しないVM統合テスト追加、CI80/80成功（run 39975025024）。試遊URLは引き続き **https://8mahi8.github.io/cyber-run/playtest-v23/** 、対応HTMLだけmainで更新（commit 6696bf5...）。**GitHub Pages＝本人試遊、Google Sites＝友達との学校公開**という区別を絶対に守る。学校のGoogle Sitesは変更しない。詳細は [研究レポート](./HANDCRAFTED_V2_STUDY_REPORT_2026-10-23.md)。
+
+
 > **GitHub Pages 試遊リンクを新規配置（2026-10-23）**：試遊候補V2.3の独立ページ `playtest-v23/index.html` を **mainへ追加のみ**で配置。既存の `index.html` / `playtest-v07/index.html` / `playtest-v08/index.html` は変更なし。既存Pagesが `main` ルートを配信している場合の試遊URLは **https://8mahi8.github.io/cyber-run/playtest-v23/** 。`main` の新規ファイルはDOCTYPE付き完全単体HTMLで外部JS/CSS依存0、noindex。実際にmainからHTMLをcheckoutする専用GitHub Actionsワークフロー（run **39972935846**）で Chromiumの73入力→55.1秒/16区間/HP3/3でクリア、リトライ→ゲームオーバーに成功。通常のゲーム回帰・品質も成功（run **39972935841**）。**実際のPages HTTP配信URLはこの環境のネットワーク制約で確認できていない**ため、404ならGitHub Settings > Pagesのsource (main/root) とビルド状況を確認する。ユーザーは **GitHub Pagesで自分が試遊、Google Sitesは友達との公開のみ** と明示。今後の試遊誘導でGoogle Sitesに貼らせない。学校Google Sites版・Firebaseの変更なし。
 
 

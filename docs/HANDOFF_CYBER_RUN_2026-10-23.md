@@ -1,6 +1,6 @@
 # CYBER RUN｜短縮チャット用の詳細引き継ぎ（2026-10-23）
 
-> **同日後半・開発記録追加**：新設計の技術試作 `handcrafted-level-v2.js`、`game-handcrafted-v2.js`、`handcrafted-playtest-v2.html` と `tests/handcrafted-v2.test.js` を開発ブランチに追加。**13区間／約42.49秒／案内コイン136個／固定準備運動約9.75秒**。新規手作り複合区間 SWITCHBACK RELAY を含む。120Hz連結・軽い入力ズレの物理シミュレーションは通過。**実ブラウザ・学校iPad未検証、GitHub Pages未配置、既存公開版変更なし。** 詳細と制約は [HANDCRAFTED_V2_STUDY_REPORT_2026-10-23.md](./HANDCRAFTED_V2_STUDY_REPORT_2026-10-23.md)。この進捗が下記の「まず設計案を議論」「実装前」の旧記載に優先。
+> **同日後半・開発記録追加**：新設計の技術試作 `handcrafted-level-v2.js`、`game-handcrafted-v2.js`、`handcrafted-playtest-v2.html` と `tests/handcrafted-v2.test.js` を開発ブランチに追加。**V2.1：15区間／約51.31秒／案内コイン167個／固定準備運動約9.75秒**。新規手作り複合区間 SWITCHBACK RELAY・SKYLINE EXIT・TUNNEL BRIDGE を含む。120Hz連結・軽い入力ズレの物理シミュレーションは通過。**実ブラウザ・学校iPad未検証、GitHub Pages未配置、既存公開版変更なし。** 詳細と制約は [HANDCRAFTED_V2_STUDY_REPORT_2026-10-23.md](./HANDCRAFTED_V2_STUDY_REPORT_2026-10-23.md)。この進捗が下記の「まず設計案を議論」「実装前」の旧記載に優先。
 
 
 > **最新追記（2026-10-23夜）**：本ファイル作成後に方針が進んだ。マップ設計の最新正本は [MAP_ARCHITECTURE_V1_2026-10-23.md](./MAP_ARCHITECTURE_V1_2026-10-23.md)。コインは「道標専用、スコアに影響なし」で決定。初見のギミックに必ず対処できる必要はない（繰り返して学ぶのが目的）。序盤約8〜12秒は毎回同じ準備運動にする。以降は手作り連続地形の条件付き生成を第一候補に設計するが、実装・試遊は未検証。**以下の古い未決定表現と矛盾する場合、この追記と新設計書を優先する。**

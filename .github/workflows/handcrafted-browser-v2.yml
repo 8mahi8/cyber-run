@@ -1,5 +1,12 @@
 name: CYBER RUN V2 Browser Smoke
 on:
+  pull_request:
+    paths:
+      - 'tools/browser-handcrafted-v2.cjs'
+      - 'handcrafted-level-v2.js'
+      - 'game-handcrafted-v2.js'
+      - 'handcrafted-playtest-v2.html'
+      - '.github/workflows/handcrafted-browser-v2.yml'
   push:
     branches:
       - dev/handcrafted-circuit-01-20261023

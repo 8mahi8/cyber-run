@@ -4,6 +4,8 @@ on:
     paths:
       - 'tools/browser-handcrafted-v2.cjs'
       - 'tools/browser-handcrafted-v2-fullrun.cjs'
+      - 'tools/browser-google-sites-draft-v22.cjs'
+      - 'cyber-run-v22-google-sites-draft.html'
       - 'handcrafted-level-v2.js'
       - 'game-handcrafted-v2.js'
       - 'handcrafted-playtest-v2.html'
@@ -14,6 +16,8 @@ on:
     paths:
       - 'tools/browser-handcrafted-v2.cjs'
       - 'tools/browser-handcrafted-v2-fullrun.cjs'
+      - 'tools/browser-google-sites-draft-v22.cjs'
+      - 'cyber-run-v22-google-sites-draft.html'
       - 'handcrafted-level-v2.js'
       - 'game-handcrafted-v2.js'
       - 'handcrafted-playtest-v2.html'
@@ -32,3 +36,5 @@ jobs:
         run: node --test tools/browser-handcrafted-v2.cjs
       - name: Full-length scripted run in real Chromium
         run: node --test tools/browser-handcrafted-v2-fullrun.cjs
+      - name: Run direct-code standalone embed from start through clear and retry
+        run: node --test tools/browser-google-sites-draft-v22.cjs

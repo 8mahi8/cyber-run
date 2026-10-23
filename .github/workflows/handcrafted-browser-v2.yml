@@ -7,6 +7,7 @@ on:
       - 'tools/browser-google-sites-draft-v22.cjs'
       - 'tools/browser-pages-v23.cjs'
       - 'tools/browser-infinite-v1.cjs'
+      - 'tools/browser-pages-v24.cjs'
       - 'infinite-playtest-v1.html'
       - 'game-infinite-v1.js'
       - 'infinite-level-v1.js'
@@ -24,6 +25,7 @@ on:
       - 'tools/browser-google-sites-draft-v22.cjs'
       - 'tools/browser-pages-v23.cjs'
       - 'tools/browser-infinite-v1.cjs'
+      - 'tools/browser-pages-v24.cjs'
       - 'infinite-playtest-v1.html'
       - 'game-infinite-v1.js'
       - 'infinite-level-v1.js'
@@ -57,7 +59,11 @@ jobs:
         run: |
           mkdir -p playtest-v23
           cp _preview_main/playtest-v23/index.html playtest-v23/index.html
+          mkdir -p playtest-v24
+          cp _preview_main/playtest-v24/index.html playtest-v24/index.html
       - name: Full V2.3 GitHub Pages artifact smoke (main source)
         run: node --test tools/browser-pages-v23.cjs
       - name: Real Chromium continuous infinite 220-second authored-run check
         run: node --test tools/browser-infinite-v1.cjs
+      - name: Verify exact main-branch V0.9 infinite Pages source for 220 seconds
+        run: node --test tools/browser-pages-v24.cjs

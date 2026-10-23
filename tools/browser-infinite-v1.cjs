@@ -44,7 +44,7 @@ test('Chromium V2 smoke: canvas, coin, start and pause',{timeout:145000},async t
   assert(allowed.has('infinite-playtest-v1.html'));
   await send('Page.navigate',{url:'http://127.0.0.1:'+server.address().port+'/infinite-playtest-v1.html'});
   await until(()=>ev("document.readyState==='complete' && !!window.CyberRunHandcrafted"));
-  assert.equal(await ev('window.CyberRunInfinite.totalSections'),Infinity);
+  assert.equal(await ev('window.CyberRunInfinite.totalSections===Infinity'),true);
   assert.equal(await ev("window.CyberRunHandcrafted.SECTIONS.some(s=>s.base==='skyline-exit')"),true);
   assert.equal(await ev("window.CyberRunHandcrafted.SECTIONS.some(s=>s.base==='tunnel-bridge')"),true);
   assert.equal(await ev("window.CyberRunHandcrafted.SECTIONS.some(s=>s.base==='spring-pressure')"),true);

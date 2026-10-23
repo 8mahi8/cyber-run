@@ -1,5 +1,8 @@
 # CYBER RUN｜短縮チャット用の詳細引き継ぎ（2026-10-23）
 
+> **GitHub Pages 試遊リンクを新規配置（2026-10-23）**：試遊候補V2.3の独立ページ `playtest-v23/index.html` を **mainへ追加のみ**で配置。既存の `index.html` / `playtest-v07/index.html` / `playtest-v08/index.html` は変更なし。既存Pagesが `main` ルートを配信している場合の試遊URLは **https://8mahi8.github.io/cyber-run/playtest-v23/** 。`main` の新規ファイルはDOCTYPE付き完全単体HTMLで外部JS/CSS依存0、noindex。実際にmainからHTMLをcheckoutする専用GitHub Actionsワークフロー（run **39972935846**）で Chromiumの73入力→55.1秒/16区間/HP3/3でクリア、リトライ→ゲームオーバーに成功。通常のゲーム回帰・品質も成功（run **39972935841**）。**実際のPages HTTP配信URLはこの環境のネットワーク制約で確認できていない**ため、404ならGitHub Settings > Pagesのsource (main/root) とビルド状況を確認する。ユーザーは **GitHub Pagesで自分が試遊、Google Sitesは友達との公開のみ** と明示。今後の試遊誘導でGoogle Sitesに貼らせない。学校Google Sites版・Firebaseの変更なし。
+
+
 > **最新 V2.3 2026-10-23：試遊候補生成済み** — `cyber-run-v22-google-sites-draft.html` にCSS・JSを完全内包した1ファイルを開発ブランチに保存（約69KB）。固定16区間・約55.1秒・コイン180枚（案内用、得点0）。`SWITCHBACK RELAY` / `TUNNEL BRIDGE` で高台用ジャンプが省略可能な抜け道を発見し、各2つの低い障害物を配置して想定ルートの省略を封止。通常CI78/78成功（run 39968427063）、Chromium独立テスト3ステップ成功（run 39968426980）。ブラウザでは単体HTMLで全区間クリア・リトライ・失敗まで確認。**学校Google Sites版への自動上書きは禁止のまま**。次はユーザーによる操作感の評価・学校iPadでの表示確認が最優先（まだ未実施）。詳細は [研究レポート](./HANDCRAFTED_V2_STUDY_REPORT_2026-10-23.md)。
 
 > **ブラウザ全行程テスト追加（2026-10-23）**：開発ブランチV2.2の16区間を **73入力・55.1秒・HP3/3・3,713mでノーダメージクリア**、クリア後リトライ→無操作ゲームオーバーも成功（GitHub Actions run 39965358405）。道標コイン全180個について、予定軌道上で取得可能・ハザードに重ならないことを別途テストし、通常CIは78/78成功（run 39965358416）。`tools/browser-handcrafted-v2-fullrun.cjs`を専用CIから実行。**人間の試遊・学校iPad Safari、面白さ評価は未確認。** 詳細は [V2研究レポート](./HANDCRAFTED_V2_STUDY_REPORT_2026-10-23.md)。

@@ -5,7 +5,8 @@
  */
 const assert=require('node:assert/strict');
 const C=require('../core.js'),H=require('../handcrafted-level-v2.js');
-assert.equal(H.totalSections,13,'expected authored study section count');
+assert.equal(H.totalSections,13,'expected study section count');
+assert.equal(H.SECTIONS[10].base,'relay-bridge','bespoke relay chain must be present');
 const warmup=['reverse-switch','sky-ascend','drop-and-duck'];
 assert.deepEqual(H.SECTIONS.slice(0,3).map(x=>x.base),warmup);
 const initDist=C.BASE_SPEED*1.45;
@@ -30,7 +31,7 @@ for(let i=0;i<H.totalSections;i++){
  cursor+=s.length;
  entry+=s.pattern.duration;
 }
-assert.equal(coins,133,'expected guide coin count after physic witness');
+assert.equal(coins,136,'expected guide coin count after physics witness');
 const warmupEnd=C.timeToTravel(0,initDist)+segments.slice(0,3).reduce((sum,s)=>sum+s.pattern.duration,0);
 assert(warmupEnd>9&&warmupEnd<11,'fixed opening should be ~10s');
 function testStitched(offset){

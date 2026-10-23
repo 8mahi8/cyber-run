@@ -7,7 +7,7 @@ const {once}=require('node:events');
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 const chrome=['/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser',process.env.CHROME_BIN].filter(Boolean).find(fs.existsSync);
 const root=path.resolve(__dirname,'..');
-const allowed=new Set(['infinite-playtest-v1.html','core.js','style.css','stickman.js','handcrafted-level-v2.js','infinite-level-v1.js','game-infinite-v1.js']);
+const allowed=new Set(['infinite-playtest-v1.html','core.js','style.css','stickman.js','handcrafted-level-v2.js','extra-motifs-v1.js','infinite-level-v1.js','game-infinite-v1.js']);
 async function until(f,timeout=12000){const start=Date.now();while(Date.now()-start<timeout){try{const v=await f();if(v)return v}catch(_){}await pause(75)}throw Error('Timed out waiting for browser')}
 test('Chromium V2 smoke: canvas, coin, start and pause',{timeout:145000},async t=>{
  if(!chrome){t.skip('Chromium unavailable on test runner');return}

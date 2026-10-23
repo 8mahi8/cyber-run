@@ -37,7 +37,7 @@
     script:[[.12,'duck-on'],[.56,'duck-off'],[.72,'jump'],[1.59,'jump'],
      [2.67,'duck-on'],[3.16,'duck-off'],[3.36,'jump']],
     platforms:[[1.06,1.83,77,'fragile']],
-    hazards:[[.42,'duck-gate'],[1.11,'low'],[2.24,'low'],[2.96,'duck-gate'],[3.68,'low']],
+    hazards:[[.38,'duck-gate'],[1.11,'low'],[2.24,'low'],[2.96,'duck-gate'],[3.68,'low']],
     gaps:[],pads:[]}
   }
  ]);

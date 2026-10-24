@@ -11,6 +11,7 @@ on:
       - 'tools/browser-pages-v25.cjs'
       - 'tools/browser-pages-v26.cjs'
       - 'tools/browser-pages-v27.cjs'
+      - 'tools/browser-pages-v28.cjs'
       - 'extra-motifs-v1.js'
       - 'infinite-playtest-v1.html'
       - 'game-infinite-v1.js'
@@ -33,6 +34,7 @@ on:
       - 'tools/browser-pages-v25.cjs'
       - 'tools/browser-pages-v26.cjs'
       - 'tools/browser-pages-v27.cjs'
+      - 'tools/browser-pages-v28.cjs'
       - 'extra-motifs-v1.js'
       - 'infinite-playtest-v1.html'
       - 'game-infinite-v1.js'
@@ -75,6 +77,8 @@ jobs:
           cp _preview_main/playtest-v26/index.html playtest-v26/index.html
           mkdir -p playtest-v27
           cp _preview_main/playtest-v27/index.html playtest-v27/index.html
+          mkdir -p playtest-v28
+          cp _preview_main/playtest-v28/index.html playtest-v28/index.html
       - name: Full V2.3 GitHub Pages artifact smoke (main source)
         run: node --test tools/browser-pages-v23.cjs
       - name: Real Chromium continuous infinite 220-second authored-run check
@@ -87,3 +91,5 @@ jobs:
         run: node --test tools/browser-pages-v26.cjs
       - name: Verify V0.12 cyan rebound rings Pages source for 220 seconds
         run: node --test tools/browser-pages-v27.cjs
+      - name: Verify V0.13 cyan ring one-TAP auto-chain Pages source for 220 seconds
+        run: node --test tools/browser-pages-v28.cjs

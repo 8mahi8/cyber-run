@@ -86,10 +86,19 @@ function step(dt){
  // Jumping from the lip must not be punished before physics processes input.
  // Keep the runner anchored at its screen x; world elements scroll left.
  const previousSupport=runner.support,previousVy=runner.vy,requested=jumpQueued;
+ const previousRingId=runner.lastAirBoostId;
  C.physicsStep(runner,dt,runner.x,platforms,gaps,duckHeld,jumpQueued,elapsed,rescue,pads);
  jumpQueued=false;
- if(previousVy>=0&&runner.vy<-800){boostFlash=.42;burst(runner.x+19,ground-6,'#ffe985',17,-55,-105)}
- else if(requested&&runner.vy<-500&&previousVy>-800){jumpFlash=.23;burst(runner.x+18,runner.bottom-3,'#66ffdd',8,-55,5)}
+ // Always confirm cyan-ring activation, even on an upward contact where
+ // velocity-only spring heuristics previously showed NO bounce feedback.
+ if(runner.lastAirBoostId!==previousRingId){
+  boostFlash=.42;burst(runner.x+19,runner.bottom-20,'#7effe5',16,-55,-100);
+  floaters.push({x:runner.x+20,y:runner.bottom-62,t:0,text:'AUTO ↑',color:'#bbfff3'});
+ }else if(previousVy>=0&&runner.vy<-800){
+  boostFlash=.42;burst(runner.x+19,ground-6,'#ffe985',17,-55,-105);
+ }else if(requested&&runner.vy<-500&&previousVy>-800){
+  jumpFlash=.23;burst(runner.x+18,runner.bottom-3,'#66ffdd',8,-55,5);
+ }
  if(previousSupport===null&&runner.support!==null&&previousVy>100){landFlash=.21;burst(runner.x+20,runner.bottom,'#94d9ff',10,-75,-42)}
  if(runner.bottom>ground+112){hit();runner.bottom=ground;runner.vy=0;runner.jumps=0;runner.support='ground';rescue=1.0;invuln=Math.max(invuln,1.4)}
  const body=playerRect();

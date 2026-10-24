@@ -235,8 +235,13 @@ function draw(){
    ctx.globalAlpha=used?.25:1;ctx.shadowBlur=18;ctx.shadowColor='#7effe5';
    ctx.strokeStyle=used?'#698b86':'#7effe5';ctx.lineWidth=5;
    ctx.beginPath();ctx.ellipse(cx,cy,pad.w/2-4,(pad.h||34)/2-2,0,0,Math.PI*2);ctx.stroke();
-   ctx.fillStyle='#d7fff4';ctx.font='bold 15px system-ui';ctx.textAlign='center';
-   ctx.fillText('↑',cx,cy+6);
+   ctx.fillStyle='#d7fff4';ctx.textAlign='center';
+   if(pad.h>=60){
+    ctx.font='bold 14px system-ui';ctx.fillText(used?'✓':'AUTO ↑',cx,cy+5);
+   }else{
+    ctx.font='bold 15px system-ui';ctx.fillText(used?'✓':'↑',cx,cy+6);
+    if(!used){ctx.font='bold 11px system-ui';ctx.fillText('AUTO',cx,cy+pad.h/2+15)}
+   }
   }else{
    ctx.shadowBlur=14;ctx.shadowColor='#ffe36d';
    ctx.fillStyle='#a47729';ctx.fillRect(pad.x,ground-10,pad.w,10);
@@ -338,6 +343,17 @@ function draw(){
    ctx.fillRect(item.x-2,item.y-7,4,14);ctx.fillRect(item.x-7,item.y-2,14,4);
   }
   ctx.restore();
+ }
+ // Manually timed jump locations are painted separately from automatic
+ // cyan ring triggers. Coins follow the actual replayed motion between both.
+ for(const section of segments)for(const cue of section.jumpCues||[]){
+  const x=section.x+cue.offset,y=cue.y;
+  if(x<0||x>viewW+40)continue;
+  ctx.save();ctx.globalAlpha=.92;
+  ctx.fillStyle='rgba(43,35,92,.83)';ctx.fillRect(x-29,y-20,58,27);
+  ctx.strokeStyle='#c2b4ff';ctx.lineWidth=1.6;ctx.strokeRect(x-29,y-20,58,27);
+  ctx.fillStyle='#ffffff';ctx.textAlign='center';ctx.font='bold 13px system-ui';
+  ctx.fillText('↑ TAP',x,y-2);ctx.restore();
  }
  if(runner){
   const crouching=runner.duck&&runner.jumps===0,airborne=runner.support===null;

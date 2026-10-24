@@ -10,8 +10,21 @@ test('game boots, score advances, pause and resume work, controls are registered
 test('runner remains anchored on screen across frames, jumps and acceleration',()=>{
  const points=[],x=simulate((px,argumentX)=>points.push([px,argumentX]));
  x.elem('primary').trigger('click');
- for(let i=0;i<1200;i++){if(i%45===0)x.elem('jump').trigger('pointerdown');x.tick()}
- assert.ok(points.length>1000,'expected many physics updates');
+ // A randomly generated course may cause game-over well before 1200 frames.
+ // Restart only after a real loss to gather enough position samples; otherwise
+ // this test flakes on obstacle-seed luck rather than detecting camera drift.
+ let retries=0;
+ for(let i=0;i<1200;i++){
+  if(x.elem('message').textContent.includes('走破')){
+   x.elem('primary').trigger('click');
+   x.elem('message').textContent='';
+   retries++;
+  }
+  if(i%45===0)x.elem('jump').trigger('pointerdown');
+  x.tick();
+ }
+ assert.ok(points.length>1000,
+  'expected 1000+ genuine physics updates across '+retries+' runs; got '+points.length);
  const anchor=points[0][0];
  for(const [actual,target] of points){
   assert.ok(Math.abs(actual-anchor)<.00001,'runner drifted off-screen: '+actual);

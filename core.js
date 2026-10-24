@@ -110,7 +110,7 @@ function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
 function intersectsGap(rect,g){return rect.x+rect.w*.77>g.x&&rect.x+rect.w*.23<g.x+g.w}
 function rectAt(x,bottom,duck){const h=duck?DUCK_H:STAND_H;return{x,y:bottom-h+4,w:BODY_W,h:h-7}}
 function hazardAt(h,time){return h.kind==='moving'?{...h,y:GROUND-87+Math.sin(time*3.5+h.phase)*27}:h}
-function makeRunner(x=0){return{x,bottom:GROUND,vy:0,jumps:0,duck:false,support:'ground',coyote:0,jumpBuffer:0,lastJump:-100,hp:3,fragileTimes:Object.create(null),airBoosts:Object.create(null)}}
+function makeRunner(x=0){return{x,bottom:GROUND,vy:0,jumps:0,duck:false,support:'ground',coyote:0,jumpBuffer:0,lastJump:-100,hp:3,fragileTimes:Object.create(null),airBoosts:Object.create(null),lastAirBoostId:null}}
 function isSupported(state){return state.support!==null}
 function physicsStep(p,dt,x,platforms,gaps,duckHeld,jumpRequested,time,rescue=0,pads=[]){
  const prevBottom=p.bottom,wasSupported=p.support!==null;
@@ -153,7 +153,7 @@ function physicsStep(p,dt,x,platforms,gaps,duckHeld,jumpRequested,time,rescue=0,
   for(const pad of pads){
    if(pad.kind!=='airboost'||p.airBoosts[pad.id])continue;
    if(overlap(body,{x:pad.x,y:pad.y,w:pad.w,h:pad.h||34})){
-    p.vy=-AIR_BOOST_VY;p.jumps=1;p.airBoosts[pad.id]=true;break;
+    p.vy=-AIR_BOOST_VY;p.jumps=1;p.airBoosts[pad.id]=true;p.lastAirBoostId=pad.id;break;
    }
   }
  }
@@ -181,7 +181,16 @@ function buildPattern(x,seconds,speed,pattern,rng,riff=0){
    'platform-bar':[65,28,GROUND-(pattern.platforms?.[extra]?.[2]||80)-62]};
   const [w,h,y]=sz[kind];hazards.push({x:x+distance(at+timingShift)-w/2,y,w,h,kind,phase:0});
  }
- const pads=(pattern.pads||[]).map(([at,width,height,kind],i)=>({id:pattern.name+':'+Math.round(seconds*1000)+':pad:'+i,x:x+distance(at)-width/2,w:width,y:kind==='airboost'?GROUND-height:GROUND,h:kind==='airboost'?34:10,kind:kind||'spring'}));
+ // The optional fifth ring argument specifies its visible AND physical
+ // diameter-height. Keep its vertical centre fixed relative to old 34px rings;
+ // existing rings/springs retain their original geometry when omitted.
+ const pads=(pattern.pads||[]).map(([at,width,height,kind,ringHeight],i)=>{
+  const ring=kind==='airboost',h=ring?(ringHeight||34):10;
+  return {id:pattern.name+':'+Math.round(seconds*1000)+':pad:'+i,
+   x:x+distance(at)-width/2,w:width,
+   y:ring?GROUND-height-(h-34)/2:GROUND,
+   h,kind:kind||'spring'};
+ });
  const gaps=(pattern.gaps||[]).map(([at,width,unit])=>{const w=unit==='seconds'?distance(at+width/2)-distance(at-width/2):width;return{x:x+distance(at)-w/2,w}});
  return {type:pattern.name,theme:pattern.theme,x,length:distance(duration),seconds,speed,hazards,gaps,platforms,pads,pickups:[],script:pattern.script,pattern,riff};
 }

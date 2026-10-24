@@ -1,0 +1,23 @@
+name: CYBER RUN Infinite Browser QA
+on:
+  push:
+    branches:
+      - dev/handcrafted-circuit-01-20261023
+    paths:
+      - 'infinite-playtest-v1.html'
+      - 'infinite-level-v1.js'
+      - 'game-infinite-v1.js'
+      - 'tools/browser-infinite-v1.cjs'
+      - '.github/workflows/infinite-browser-v1.yml'
+  workflow_dispatch:
+jobs:
+  infinite-chromium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Simulate 220 seconds of real infinite game physics and controls in Chromium
+        run: node --test tools/browser-infinite-v1.cjs

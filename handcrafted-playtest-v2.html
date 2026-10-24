@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#070d20">
+<title>CYBER RUN — CIRCUIT STUDY V2 | 手作りチャレンジ</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game" aria-label="CYBER RUN game"></canvas>
+<header id="hud" aria-live="off">
+  <div class="metric"><span>DISTANCE</span><strong id="score">0</strong><small id="best">BEST 0 m</small></div>
+  <div class="center-hud"><div id="hearts">♥ ♥ ♥</div><div id="region">NEON CITY</div></div>
+  <div class="metric right"><span>SPEED</span><strong id="speed">1.0×</strong><small id="distance">GROUND FLOW</small></div>
+</header>
+<div id="controls"><button id="duck" class="control duck" aria-label="しゃがむ">しゃがむ</button><button id="jump" class="control jump" aria-label="ジャンプ">ジャンプ</button></div>
+<button id="pause" aria-label="一時停止">Ⅱ</button>
+<div id="overlay" role="dialog" aria-modal="true"><section id="panel">
+  <div class="eyebrow">CHALLENGE 01 / HAND-AUTHORED MAP</div>
+  <h1>CYBER <em>RUN</em></h1>
+  <p id="message">最初の約10秒は固定準備運動。コインは道標（スコアなし）。何度も挑戦して連携操作を覚えよう。全16区間の研究用コースです。</p>
+  <p class="hint">ジャンプ：右ボタンを2回までタップ<br>しゃがみ：左ボタンを長押し<br>キーボード：↑ / Space、↓</p>
+  <button id="primary">RUN START</button>
+  <div class="sub">約56秒の研究用固定コース ／ コインはスコア無し ／ 無限ラン・ランキングは未実装</div>
+</section></div>
+<script src="core.js"></script><script src="stickman.js"></script><script src="handcrafted-level-v2.js"></script><script src="game-handcrafted-v2.js"></script>
+</body></html>

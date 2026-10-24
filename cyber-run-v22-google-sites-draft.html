@@ -1,0 +1,1051 @@
+<!-- CYBER RUN V2.3.1 experimental, Google Sites READY BUT NOT DEPLOYED.
+Trial this game ONLY on GitHub Pages first. Single-file direct-code build. -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+<style>
+:root{color-scheme:dark;--cyan:#65eeef;--purple:#c185ff;--cream:#f2faff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#070d20;color:var(--cream);font-family:system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;touch-action:none;overscroll-behavior:none;-webkit-user-select:none;user-select:none}
+canvas{width:100vw;height:100dvh;display:block;touch-action:none}
+#hud{position:fixed;top:max(9px,env(safe-area-inset-top));left:max(18px,env(safe-area-inset-left));right:max(18px,env(safe-area-inset-right));display:flex;justify-content:space-between;align-items:flex-start;z-index:3;pointer-events:none;gap:10px;text-shadow:0 2px 8px #020817}
+.metric{min-width:100px;display:flex;flex-direction:column}.metric.right{text-align:right}.metric span{font-size:11px;letter-spacing:.18em;color:#a6c3dd;font-weight:800}.metric strong{font-variant-numeric:tabular-nums;font-size:clamp(20px,3.8vw,32px);line-height:1.15;color:#fff}.metric small{font-size:11px;color:#98c9e0}.center-hud{text-align:center}#hearts{font-size:clamp(16px,3vw,24px);color:#ff7899;white-space:nowrap;letter-spacing:.1em}#region{font-size:10px;letter-spacing:.16em;color:#8be5f5;font-weight:700}
+#controls{position:fixed;inset:auto max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));display:flex;justify-content:space-between;pointer-events:none;z-index:4}.control{pointer-events:auto;touch-action:none;border:2px solid #76d4fa;border-radius:20px;width:clamp(100px,20vw,152px);height:clamp(58px,16vh,84px);font-size:clamp(15px,2.5vw,22px);font-weight:900;color:white;box-shadow:0 6px 20px #02081988;background:#184269ec}.control.jump{background:#126cafee;border-color:#7bfcf2}.control:active,.control.pressed{transform:scale(.96);filter:brightness(1.3)}#pause{position:fixed;z-index:4;top:104px;right:max(18px,env(safe-area-inset-right));background:#162c4dce;color:white;border:1px solid #58859a;border-radius:9px;padding:6px 12px;font-size:18px;touch-action:manipulation}
+#overlay{position:fixed;inset:0;display:grid;place-items:center;background:#020818b9;z-index:6;padding:15px}#overlay.hidden{display:none}#panel{width:min(430px,90vw);max-height:95dvh;overflow:auto;text-align:center;border:1px solid #5dd4ee;border-radius:24px;padding:clamp(20px,4vh,32px);background:linear-gradient(135deg,#10274be8,#151631ed);box-shadow:0 0 55px #0bc5e622}h1{margin:3px 0 12px;font-size:clamp(34px,6vw,56px);letter-spacing:.06em;font-weight:950}h1 em{color:#64eded;font-style:normal}.eyebrow{font-size:10px;letter-spacing:.2em;color:#9ab8d3;font-weight:700}#message{font-size:16px;line-height:1.5}.hint{font-size:12px;line-height:1.8;color:#b6cbe2}#primary{border:0;border-radius:14px;background:linear-gradient(100deg,#0dc6d4,#397cff);padding:13px 32px;margin:9px 0;color:white;font-weight:900;font-size:18px;box-shadow:0 6px 20px #0c63aa66}.sub{font-size:10px;color:#9cb2c8;margin-top:12px}
+@media (max-height:330px){#pause{top:88px}#region,.metric small{display:none}#panel{padding:12px}.hint{margin:6px 0}.control{height:52px}h1{font-size:28px}}
+
+</style>
+
+<canvas id="game" aria-label="CYBER RUN game"></canvas>
+<header id="hud" aria-live="off">
+  <div class="metric"><span>DISTANCE</span><strong id="score">0</strong><small id="best">BEST 0 m</small></div>
+  <div class="center-hud"><div id="hearts">♥ ♥ ♥</div><div id="region">NEON CITY</div></div>
+  <div class="metric right"><span>SPEED</span><strong id="speed">1.0×</strong><small id="distance">GROUND FLOW</small></div>
+</header>
+<div id="controls"><button id="duck" class="control duck" aria-label="しゃがむ">しゃがむ</button><button id="jump" class="control jump" aria-label="ジャンプ">ジャンプ</button></div>
+<button id="pause" aria-label="一時停止">Ⅱ</button>
+<div id="overlay" role="dialog" aria-modal="true"><section id="panel">
+  <div class="eyebrow">CHALLENGE 01 / HAND-AUTHORED MAP</div>
+  <h1>CYBER <em>RUN</em></h1>
+  <p id="message">最初の約10秒は固定準備運動。コインは道標（スコアなし）。何度も挑戦して連携操作を覚えよう。全16区間の研究用コースです。</p>
+  <p class="hint">ジャンプ：右ボタンを2回までタップ<br>しゃがみ：左ボタンを長押し<br>キーボード：↑ / Space、↓</p>
+  <button id="primary">RUN START</button>
+  <div class="sub">約56秒の研究用固定コース ／ コインはスコア無し ／ 無限ラン・ランキングは未実装</div>
+</section></div>
+
+
+<script>/* CYBER RUN v0.6 — action-first courses with shared physics and one-way platforms.
+ * Units: logical canvas pixels, 120 Hz simulation. No dependencies or remote services.
+ */
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;root.CyberRunCore=api})(typeof globalThis!=='undefined'?globalThis:this,function(){
+'use strict';
+const GROUND=370,GRAVITY=1900,FIRST_JUMP=690,SECOND_JUMP=640,SPRING_JUMP=930,BASE_SPEED=400,MAX_SPEED=1150;
+const BODY_W=21,HITBOX_OFFSET_X=6,STAND_H=48,DUCK_H=27,MIN_SECOND_JUMP=.11,DT=1/120;
+// Duck-gate fills the reachable jumping lane but leaves an honest crouch-height opening.
+// Unlike optional bars, its full collision silhouette extends above maximum ground jump.
+const DUCK_GATE_OPENING=28,DUCK_GATE_TOP=GROUND-300,FRAGILE_HOLD=.34,AIR_BOOST_VY=890;
+const PATTERNS=[
+ // 'script' records the intended action sequence, not the only valid route.
+ {name:'street-pulse',theme:'GROUND FLOW',duration:2.20,weight:4,script:[[.22,'jump'],[1.04,'jump']],hazards:[[.48,'low'],[1.31,'low']]},
+ {name:'duck-switch',theme:'GROUND FLOW',duration:2.17,weight:4,script:[[.23,'jump'],[.87,'duck-on'],[1.50,'duck-off']],hazards:[[.48,'low'],[1.28,'bar']]},
+ {name:'reverse-switch',theme:'GROUND FLOW',duration:2.17,weight:4,script:[[.15,'duck-on'],[.62,'duck-off'],[.84,'jump']],hazards:[[.45,'duck-gate'],[1.14,'low']]},
+ {name:'tunnel-run',theme:'TUNNEL FLOW',duration:2.28,weight:3,script:[[.14,'duck-on'],[1.15,'duck-off'],[1.26,'jump']],hazards:[[.45,'duck-gate'],[.87,'bar'],[1.60,'low']]},
+ {name:'double-boost',theme:'AIR FLOW',duration:2.25,weight:2.5,minTime:5,script:[[.24,'jump'],[.49,'jump']],hazards:[[.83,'tall']]},
+ {name:'sky-bridge',theme:'SKY FLOW',duration:2.29,weight:6,minTime:0,script:[[.20,'jump']],platforms:[[.48,1.42,80]],hazards:[[.99,'low'],[1.25,'low']]},
+ {name:'sky-crouch',theme:'SKY FLOW',duration:2.35,weight:4.5,minTime:3,script:[[.18,'jump'],[.93,'duck-on'],[1.38,'duck-off']],platforms:[[.45,1.49,77]],hazards:[[1.17,'platform-bar',0],[1.18,'low']]},
+ {name:'fall-and-hop',theme:'SKY FLOW',duration:2.53,weight:3.2,minTime:6,script:[[.18,'jump'],[1.47,'jump']],platforms:[[.45,1.10,77]],hazards:[[.78,'low'],[1.79,'low']]},
+ {name:'tunnel-to-sky',theme:'SKY FLOW',duration:2.67,weight:3,minTime:8,script:[[.23,'duck-on'],[.60,'duck-off'],[.79,'jump']],platforms:[[1.00,1.91,81]],hazards:[[.44,'bar'],[1.41,'low'],[1.70,'low']]},
+ {name:'sky-gap',theme:'SKY FLOW',duration:2.30,weight:2,minTime:15,script:[[.20,'jump']],platforms:[[.48,1.43,80]],hazards:[[.83,'low']],gaps:[[1.06,58]]},
+ {name:'rhythm-three',theme:'GROUND FLOW',duration:2.90,weight:3,minTime:10,script:[[.19,'jump'],[.93,'duck-on'],[1.34,'duck-off'],[1.47,'jump']],hazards:[[.44,'low'],[1.15,'bar'],[1.75,'low']]},
+ {name:'sky-low-high',theme:'SKY FLOW',duration:2.65,weight:2.5,minTime:17,script:[[.20,'jump'],[1.47,'jump']],platforms:[[.49,1.13,82]],hazards:[[.87,'low'],[1.83,'low']]},
+
+ // Dense, action-distinct motifs. Scripts are witnessed and rejected at build time if unsafe.
+ {name:'triple-strike',theme:'GROUND RHYTHM',duration:3.17,weight:3.7,minTime:3,
+  script:[[.20,'jump'],[1.04,'jump'],[1.87,'jump']],hazards:[[.45,'low'],[1.31,'low'],[2.15,'low']]},
+ {name:'duck-weave',theme:'TUNNEL FLOW',duration:2.96,weight:4.2,minTime:2,
+  script:[[.11,'duck-on'],[.57,'duck-off'],[.73,'jump'],[1.48,'duck-on'],[2.12,'duck-off']],
+  hazards:[[.40,'duck-gate'],[1.04,'low'],[1.82,'bar']]},
+ {name:'beam-chase',theme:'TUNNEL FLOW',duration:2.57,weight:3.7,minTime:5,
+  script:[[.14,'duck-on'],[1.02,'duck-off'],[1.21,'jump']],
+  hazards:[[.40,'bar'],[.77,'duck-gate'],[1.46,'low']]},
+ {name:'platform-weave',theme:'SKY FLOW',duration:2.68,weight:6.3,minTime:2,
+  script:[[.18,'jump'],[.91,'duck-on'],[1.36,'duck-off'],[1.66,'jump']],
+  platforms:[[.46,1.38,79]],hazards:[[.93,'low'],[1.14,'platform-bar',0],[1.98,'low']]},
+ {name:'drop-and-duck',theme:'SKY FLOW',duration:3.05,weight:3.5,minTime:7,
+  script:[[.18,'jump'],[1.44,'duck-on'],[1.90,'duck-off'],[2.06,'jump']],
+  platforms:[[.46,1.03,79]],hazards:[[.85,'low'],[1.70,'duck-gate'],[2.33,'low']]},
+ {name:'pulse-drone',theme:'MOTION FLOW',duration:2.81,weight:4.1,minTime:4,
+  script:[[.12,'duck-on'],[.75,'duck-off'],[.91,'jump'],[1.70,'duck-on'],[2.23,'duck-off']],
+  hazards:[[.42,'moving'],[1.20,'low'],[2.02,'duck-gate']]},
+ {name:'aerial-surge',theme:'SKY FLOW',duration:2.73,weight:3.8,minTime:10,
+  script:[[.17,'jump'],[.98,'jump'],[1.89,'duck-on'],[2.27,'duck-off']],
+  platforms:[[.46,1.12,78]],hazards:[[.83,'low'],[1.40,'low'],[2.07,'bar']]},
+ {name:'spring-overdrive',theme:'BOOST FLOW',duration:2.72,weight:3.8,minTime:6,
+  script:[[1.80,'duck-on'],[2.24,'duck-off']],pads:[[.38,46]],hazards:[[.86,'tall'],[2.03,'bar']]},
+ {name:'spring-to-sky',theme:'BOOST FLOW',duration:2.81,weight:3.0,minTime:10,
+  script:[[1.22,'duck-on'],[1.69,'duck-off']],pads:[[.31,46]],
+  platforms:[[.81,1.68,110]],hazards:[[1.48,'platform-bar',0],[1.37,'low']]},
+ // Two-height courses are genuinely different traversals: the witnessed path
+ // touches BOTH suspended floors, then releases naturally into the next section.
+ {name:'sky-stepdown',theme:'SKY FLOW',duration:2.78,weight:3.0,minTime:8,
+  script:[[.19,'jump'],[1.48,'jump']],platforms:[[.47,1.02,85],[1.12,1.63,45]],
+  hazards:[[.77,'low'],[1.83,'low']]},
+ {name:'sky-stepduck',theme:'SKY FLOW',duration:2.88,weight:2.8,minTime:12,
+  script:[[.19,'jump'],[1.37,'duck-on'],[1.77,'duck-off'],[1.92,'jump']],
+  platforms:[[.46,1.05,80],[1.12,1.88,45]],
+  hazards:[[.80,'low'],[1.60,'platform-bar',1],[2.23,'low']]},
+ // Higher-distance mastery bursts: several alternating commands in one continuous flow.
+ {name:'rhythm-five',theme:'RHYTHM BURST',duration:3.52,weight:4.8,minTime:12,
+  script:[[.13,'jump'],[.84,'duck-on'],[1.23,'duck-off'],[1.31,'jump'],[2.01,'duck-on'],[2.40,'duck-off'],[2.50,'jump']],
+  hazards:[[.43,'low'],[1.07,'bar'],[1.61,'low'],[2.25,'bar'],[2.80,'low']]},
+ {name:'overdrive-rhythm',theme:'RHYTHM BURST',duration:4.56,weight:6.0,minTime:40,
+  script:[[.13,'jump'],[.84,'duck-on'],[1.23,'duck-off'],[1.31,'jump'],[2.01,'duck-on'],[2.40,'duck-off'],[2.50,'jump'],[3.21,'duck-on'],[3.60,'duck-off'],[3.68,'jump']],
+  hazards:[[.43,'low'],[1.07,'bar'],[1.61,'low'],[2.25,'bar'],[2.80,'low'],[3.45,'bar'],[4.00,'low']]},
+ // Ascending aerial routes: land on a low platform, jump to a HIGHER one,
+ // then exit naturally. The alternate adds a ceiling on the second level.
+ {name:'sky-ascend',theme:'SKY CLIMB',duration:3.10,weight:3.9,minTime:12,
+  script:[[.19,'jump'],[.89,'jump']],platforms:[[.46,1.19,75],[1.32,2.10,142]],
+  hazards:[[.81,'low'],[1.81,'low']]},
+ {name:'sky-ascend-duck',theme:'SKY CLIMB',duration:3.15,weight:3.9,minTime:15,
+  script:[[.19,'jump'],[.89,'jump'],[1.65,'duck-on'],[2.15,'duck-off']],
+  platforms:[[.46,1.20,75],[1.32,2.25,142]],
+  hazards:[[.81,'low'],[1.91,'platform-bar',1]]},
+ // Two new MECHANICAL systems for V0.8, not just different hurdle graphics:
+ // A fragile catwalk disappears 340ms after touchdown, demanding a second jump.
+ {name:'fracture-hop',theme:'FRACTURE CHASM',duration:2.50,weight:7.5,minTime:22,challenge:true,
+  script:[[.20,'jump'],[.96,'jump']],platforms:[[.48,1.23,75,'fragile']],
+  gaps:[[1.00,1.20,'seconds']],hazards:[]},
+ {name:'fracture-shutter',theme:'FRACTURE CHASM',duration:3.25,weight:7,minTime:37,challenge:true,
+  script:[[.20,'jump'],[.96,'jump'],[2.15,'duck-on'],[2.70,'duck-off']],
+  platforms:[[.48,1.23,75,'fragile']],gaps:[[1.00,1.20,'seconds']],
+  hazards:[[2.43,'duck-gate']]},
+ // An airborne boost ring is hitbox-activated once and needed to clear the gap.
+ {name:'orb-leap',theme:'AERIAL REBOUND',duration:2.55,weight:7.5,minTime:22,challenge:true,
+  script:[[.17,'jump'],[1.10,'jump']],pads:[[.80,44,95,'airboost']],
+  gaps:[[1.03,1.55,'seconds']],hazards:[]},
+ {name:'orb-gate',theme:'AERIAL REBOUND',duration:3.28,weight:7,minTime:52,challenge:true,
+  script:[[.17,'jump'],[1.10,'jump'],[2.13,'duck-on'],[2.76,'duck-off']],
+  pads:[[.80,44,95,'airboost']],gaps:[[1.03,1.55,'seconds']],
+  hazards:[[2.42,'duck-gate']]},
+ // Endgame mastery: the broken catwalk and air ring BOTH matter. The exit
+ // requires crouching after the second, longer airborne phase.
+ {name:'fracture-rebound-gate',theme:'MASTER CHAIN',duration:3.55,weight:7,minTime:75,challenge:true,
+  script:[[.20,'jump'],[.96,'jump'],[2.42,'duck-on'],[3.01,'duck-off']],
+  platforms:[[.48,1.23,75,'fragile']],pads:[[1.40,44,225,'airboost']],
+  gaps:[[1.30,1.90,'seconds']],hazards:[[2.65,'duck-gate']]},
+ {name:'breather',theme:'RECOVERY',duration:1.12,weight:.15,script:[],hazards:[]},
+];
+function speedAt(seconds){return Math.min(MAX_SPEED,BASE_SPEED+Math.max(0,seconds)*7.5)}
+function timeToTravel(seconds,distance){
+ const v=speedAt(seconds),a=7.5,cap=(MAX_SPEED-v)/a,capDistance=v*cap+.5*a*cap*cap;
+ if(distance<=capDistance)return (Math.sqrt(v*v+2*a*distance)-v)/a;
+ return cap+(distance-capDistance)/MAX_SPEED;
+}
+function randomizer(seed){let n=seed>>>0;return function(){n=(Math.imul(n,1664525)+1013904223)>>>0;return n/4294967296}}
+function overlap(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
+function intersectsGap(rect,g){return rect.x+rect.w*.77>g.x&&rect.x+rect.w*.23<g.x+g.w}
+function rectAt(x,bottom,duck){const h=duck?DUCK_H:STAND_H;return{x,y:bottom-h+4,w:BODY_W,h:h-7}}
+function hazardAt(h,time){return h.kind==='moving'?{...h,y:GROUND-87+Math.sin(time*3.5+h.phase)*27}:h}
+function makeRunner(x=0){return{x,bottom:GROUND,vy:0,jumps:0,duck:false,support:'ground',coyote:0,jumpBuffer:0,lastJump:-100,hp:3,fragileTimes:Object.create(null),airBoosts:Object.create(null)}}
+function isSupported(state){return state.support!==null}
+function physicsStep(p,dt,x,platforms,gaps,duckHeld,jumpRequested,time,rescue=0,pads=[]){
+ const prevBottom=p.bottom,wasSupported=p.support!==null;
+ p.x=x;
+ if(jumpRequested)p.jumpBuffer=.105;else p.jumpBuffer=Math.max(0,p.jumpBuffer-dt);
+ p.coyote=Math.max(0,p.coyote-dt);
+ if(p.jumpBuffer>0&&p.jumps<2&&time-p.lastJump>=MIN_SECOND_JUMP&&(p.jumps>0||wasSupported||p.coyote>0)){
+  const first=p.jumps===0;p.vy=-(first?FIRST_JUMP:SECOND_JUMP);p.jumps++;p.lastJump=time;p.support=null;p.coyote=0;p.jumpBuffer=0;
+ }
+ p.duck=!!duckHeld&&p.jumps===0&&p.support!==null;
+ p.vy+=GRAVITY*dt;
+ p.bottom+=p.vy*dt;
+ let landing=null;
+ if(p.vy>=0){
+  for(const platform of platforms){
+   // Fragile catwalks collapse shortly after the first real touchdown.
+   if(platform.kind==='fragile'&&p.fragileTimes[platform.id]!==undefined&&time-p.fragileTimes[platform.id]>=FRAGILE_HOLD)continue;
+   // Only collide when descending across the upper face: jump from underneath passes through.
+   if(prevBottom<=platform.y+.001&&p.bottom>=platform.y&&x+HITBOX_OFFSET_X+BODY_W*.86>platform.x&&x+HITBOX_OFFSET_X+BODY_W*.14<platform.x+platform.w){
+    if(!landing||platform.y<landing.y)landing={y:platform.y,id:platform.id};
+   }
+  }
+  if(prevBottom<=GROUND+.001&&p.bottom>=GROUND){
+   const feet=rectAt(x+HITBOX_OFFSET_X,p.bottom,p.duck);
+   if(rescue>0||!gaps.some(g=>intersectsGap(feet,g))){if(!landing||GROUND<landing.y)landing={y:GROUND,id:'ground'}}
+  }
+ }
+ if(landing){
+  const spring=landing.id==='ground'&&pads.find(pad=>(!pad.kind||pad.kind==='spring')&&x+HITBOX_OFFSET_X+BODY_W*.86>pad.x&&x+HITBOX_OFFSET_X+BODY_W*.14<pad.x+pad.w);
+  if(spring){p.bottom=GROUND;p.vy=-SPRING_JUMP;p.jumps=1;p.support=null;p.coyote=0;p.duck=false;p.jumpBuffer=0}
+  else {p.bottom=landing.y;p.vy=0;p.jumps=0;p.support=landing.id;p.coyote=.075;p.duck=!!duckHeld; /* Retain a buffered jump through touchdown. */
+   const floor=platforms.find(f=>f.id===landing.id);
+   if(floor?.kind==='fragile'&&p.fragileTimes[landing.id]===undefined)p.fragileTimes[landing.id]=time;
+  }
+ }
+ else {p.support=null;if(wasSupported&&p.jumps===0)p.coyote=.075;if(p.jumps===0&&p.coyote<=0)p.jumps=1;p.duck=false}
+ // The airborne ring automatically fires once when the runner physically enters it.
+ if(p.support===null){
+  const body=rectAt(x+HITBOX_OFFSET_X,p.bottom,p.duck);
+  for(const pad of pads){
+   if(pad.kind!=='airboost'||p.airBoosts[pad.id])continue;
+   if(overlap(body,{x:pad.x,y:pad.y,w:pad.w,h:pad.h||34})){
+    p.vy=-AIR_BOOST_VY;p.jumps=1;p.airBoosts[pad.id]=true;break;
+   }
+  }
+ }
+ return p;
+}
+function buildPattern(x,seconds,speed,pattern,rng,riff=0){
+ const duration=pattern.duration;
+ const distance=t=>{
+  // Travel at the real acceleration curve, not the speed sampled at chunk entry.
+  const initial=Math.max(0,Math.min(MAX_SPEED,BASE_SPEED+seconds*7.5));
+  const untilCap=(MAX_SPEED-initial)/7.5;
+  const rising=Math.min(t,Math.max(0,untilCap));
+  return initial*rising+3.75*rising*rising+MAX_SPEED*Math.max(0,t-rising);
+ };
+ const platforms=(pattern.platforms||[]).map(([a,b,height,kind],i)=>({id:pattern.name+':'+(kind==='fragile'?Math.round(seconds*1000)+':':'')+i,x:x+distance(a),w:distance(b-a),y:GROUND-height,kind:kind||'one-way'}));
+ // Micro-riffs change the relative timing of existing hazards, not the move script.
+ // Variants must be independently certified against the real runner physics.
+ const hazards=[];let hazardIndex=0;
+ for(const [at,kind,extra] of pattern.hazards){
+  const timingShift=riff===1?(hazardIndex%2?-.014:.016):
+   riff===2?(hazardIndex%2?.016:-.014):
+   riff===3?(hazardIndex%3===0?.024:-.012):0;
+  hazardIndex++;
+  const sz={low:[32,36,GROUND-36],bar:[69,29,GROUND-64],'duck-gate':[84,GROUND-DUCK_GATE_OPENING-DUCK_GATE_TOP,DUCK_GATE_TOP],tall:[40,158,GROUND-158],moving:[34,28,GROUND-87],
+   'platform-bar':[65,28,GROUND-(pattern.platforms?.[extra]?.[2]||80)-62]};
+  const [w,h,y]=sz[kind];hazards.push({x:x+distance(at+timingShift)-w/2,y,w,h,kind,phase:0});
+ }
+ const pads=(pattern.pads||[]).map(([at,width,height,kind],i)=>({id:pattern.name+':'+Math.round(seconds*1000)+':pad:'+i,x:x+distance(at)-width/2,w:width,y:kind==='airboost'?GROUND-height:GROUND,h:kind==='airboost'?34:10,kind:kind||'spring'}));
+ const gaps=(pattern.gaps||[]).map(([at,width,unit])=>{const w=unit==='seconds'?distance(at+width/2)-distance(at-width/2):width;return{x:x+distance(at)-w/2,w}});
+ return {type:pattern.name,theme:pattern.theme,x,length:distance(duration),seconds,speed,hazards,gaps,platforms,pads,pickups:[],script:pattern.script,pattern,riff};
+}
+// Replays a desired movement sequence using the SAME physics tick as the game, checking
+// environment collision and cross-boundary grounded handoff. No search on the iPad.
+function replayPattern(segment,opts={}){
+ const dt=DT,offset=opts.offset||0,x0=segment.x,initialTime=segment.seconds;
+ const pattern=segment.pattern||PATTERNS.find(p=>p.name===segment.type);
+ if(!pattern)return {ok:false,reason:'unknown pattern'};
+ // Verify independent per-action input drift; the chronological order may change.
+ const events=(pattern.script||[]).map((event,i)=>[event[0]+(opts.actionOffsets?.[i]||0),event[1]]).sort((a,b)=>a[0]-b[0]);
+ const runner=makeRunner(x0);let time=0,covered=0,next=0,duck=false,steps=0;
+ const route=[];
+ const maxSteps=Math.max(1000,Math.ceil((pattern.duration||0)/dt)+90);
+ while(covered<segment.length&&steps++<maxSteps){
+  let request=false;
+  while(next<events.length&&events[next][0]+offset<=time+1e-6){const action=events[next++][1];if(action==='jump')request=true;else if(action==='duck-on')duck=true;else if(action==='duck-off')duck=false}
+  covered+=speedAt(initialTime+time)*dt;
+  const worldX=x0+covered;
+  physicsStep(runner,dt,worldX,segment.platforms,segment.gaps,duck,request,initialTime+time,0,segment.pads);
+  const rect=rectAt(worldX+HITBOX_OFFSET_X,runner.bottom,runner.duck);
+  if(runner.bottom>GROUND+10)return {ok:false,reason:'fell',time,worldX};
+  if(segment.hazards.some(h=>overlap(rect,hazardAt(h,initialTime+time))))return {ok:false,reason:'hazard',time,worldX};
+  if(opts.trace)route.push({time,worldX,bottom:runner.bottom,jumps:runner.jumps,support:runner.support,duck:runner.duck});
+  time+=dt;
+ }
+ if(steps>=maxSteps||runner.support!=='ground'||runner.jumps!==0)return {ok:false,reason:'bad handoff',time,bottom:runner.bottom,support:runner.support};
+ return {ok:true,time,steps,route};
+}
+function verifyPattern(p,seconds,opts={}){
+ const segment=buildPattern(0,seconds,speedAt(seconds),p,randomizer(123));
+ const offsets=opts.offsets||[0,.025,-.025];
+ return offsets.every(offset=>replayPattern(segment,{offset}).ok);
+}
+
+// V0.7 experimental: PLAN CONTROLS -> SIMULATE ACTUAL RUNNER -> PLACE TERRAIN.
+// Legacy motif library remains as a fallback while human-time-jitter QA is expanded.
+function trajectoryTrace(events,duration,seconds,platforms=[]){
+ const p=makeRunner(0),trace=[],dt=DT;let next=0,duck=false;
+ const distance=t=>{const v=speedAt(seconds),cap=(MAX_SPEED-v)/7.5,rise=Math.min(t,Math.max(0,cap));return v*rise+3.75*rise*rise+MAX_SPEED*Math.max(0,t-rise)};
+ for(let frame=0;frame<Math.ceil(duration/dt);frame++){
+  const t=frame*dt;let jump=false;
+  while(next<events.length&&events[next][0]<=t+1e-6){const action=events[next++][1];if(action==='jump')jump=true;else if(action==='duck-on')duck=true;else if(action==='duck-off')duck=false}
+  const x=distance(t+dt);
+  physicsStep(p,dt,x,platforms,[],duck,jump,seconds+t);
+  trace.push({t,x,bottom:p.bottom,duck:p.duck,jumps:p.jumps,support:p.support});
+  if(p.bottom>GROUND+10)return null;
+ }
+ return p.support==='ground'?trace:null;
+}
+function trajectoryComposition(seconds,rng){
+ const moves=['vault','slide','double','gap','slide-vault','vault-slide','sky-line','sky-stair'];
+ const pressure=Math.min(1,seconds/100),count=4+Math.floor(rng()*2)+Math.floor(pressure);
+ // Shorter links between distinct actions, not artificially faster jump physics.
+ const bridge=seconds>=55?.15:seconds>=20?.055:0;
+ const script=[],needs=[];let cursor=.18,last='',skyIndex=0,stairCount=0,skyFloorCount=0;
+ for(let i=0;i<count;i++){
+  let choices=moves.slice();
+  if(seconds<9)choices=choices.filter(v=>v!=='double'&&v!=='sky-line'&&v!=='sky-stair');
+  if(seconds<20)choices=choices.filter(v=>v!=='sky-stair');
+  let name=choices[Math.floor(rng()*choices.length)];
+  if(name===last)name=choices[(choices.indexOf(name)+2)%choices.length];
+  // Bound repeated multi-floor height solves. One segment can still contain
+  // a real two-tier stair with a raised crouch, or two simpler sky landings.
+  if(name==='sky-stair'&&stairCount>0)name='slide-vault';
+  if((name==='sky-stair'?2:name==='sky-line'?1:0)+skyFloorCount>2)name='vault-slide';
+  if(name==='sky-stair'){stairCount++;skyFloorCount+=2}
+  else if(name==='sky-line')skyFloorCount++;
+  last=name;const t=cursor;
+  const act=(at,action)=>script.push([at,action]);
+  const want=(kind,start,end,index=null)=>needs.push({kind,start,end,index});
+  if(name==='sky-stair'){
+   // Plan actions before terrain: low landing -> jump to high landing ->
+   // crouch under an elevated beam -> fall naturally to ground.
+   act(t,'jump');act(t+.87,'jump');act(t+1.48,'duck-on');act(t+2.06,'duck-off');
+   const first=skyIndex++,second=skyIndex++;
+   want('platform',t+.29,t+1.08,first);
+   want('platform',t+1.24,t+1.93,second);
+   want('platform-bar',t+1.73,t+1.80,second);
+   cursor=t+2.56-bridge;
+  }else if(name==='sky-line'){
+   act(t,'jump');act(t+.98,'jump');const index=skyIndex++;
+   want('platform',t+.28,t+1.50,index);
+   want('platform-low',t+1.35,t+1.46,index);cursor=t+2.12-bridge;
+  }else if(name==='slide'){
+   act(t,'duck-on');act(t+.56,'duck-off');want('duck-gate',t+.24,t+.35);cursor=t+.84-bridge;
+  }else if(name==='vault'){
+   act(t,'jump');want('low',t+.29,t+.38);cursor=t+.92-bridge;
+  }else if(name==='double'){
+   act(t,'jump');act(t+.36,'jump');want('tall',t+.69,t+.87);cursor=t+1.58-bridge;
+  }else if(name==='gap'){
+   act(t,'jump');want('gap',t+.30,t+.42);cursor=t+.92-bridge;
+  }else if(name==='slide-vault'){
+   act(t,'duck-on');act(t+.57,'duck-off');act(t+.79,'jump');
+   want('duck-gate',t+.25,t+.37);want('low',t+1.10,t+1.21);cursor=t+1.69-bridge;
+  }else{
+   act(t,'jump');act(t+.94,'duck-on');act(t+1.50,'duck-off');
+   want('low',t+.30,t+.38);want('bar',t+1.19,t+1.31);cursor=t+1.77-bridge;
+  }
+ }
+ script.sort((a,b)=>a[0]-b[0]);return {script,needs,duration:cursor+.18,count};
+}
+function composeTrajectoryAttempt(x,seconds,rng){
+ const plan=trajectoryComposition(seconds,rng);
+ const pilot=trajectoryTrace(plan.script,plan.duration,seconds);
+ if(!pilot)return null;
+ const distance=t=>{const v=speedAt(seconds),cap=(MAX_SPEED-v)/7.5,rise=Math.min(t,Math.max(0,cap));return v*rise+3.75*rise*rise+MAX_SPEED*Math.max(0,t-rise)};
+ const platforms=[];
+ for(const need of plan.needs.filter(n=>n.kind==='platform')){
+  // Successive floors are derived from the trace AFTER earlier landings.
+  // The simulation uses segment-local X, terrain uses world X.
+  const staged=platforms.length?
+    trajectoryTrace(plan.script,plan.duration,seconds,platforms.map(p=>({...p,x:p.x-x}))):pilot;
+  if(!staged)return null;
+  const ref=staged.find(p=>p.t>=need.start+.30);if(!ref)return null;
+  const y=Math.round(ref.bottom);
+  if(y>GROUND-55||y<GROUND-150)return null;
+  platforms.push({id:'trace-route:'+platforms.length,x:x+distance(need.start),w:distance(need.end)-distance(need.start),y,kind:'one-way'});
+ }
+ const trace=platforms.length?trajectoryTrace(plan.script,plan.duration,seconds,platforms.map(p=>({...p,x:p.x-x}))):pilot;
+ if(!trace)return null;
+ const name='trace-route';
+ const pattern={name,theme:platforms.length?'SKY TRACE':'KINETIC TRACE',duration:plan.duration,weight:1,script:plan.script,hazards:[],gaps:[],platforms:platforms.map(p=>[0,0,GROUND-p.y]),pads:[]};
+ const obstacles=[],gaps=[];
+ for(const need of plan.needs){
+  if(need.kind==='platform')continue;
+  const options=trace.filter(p=>p.t>=need.start&&p.t<=need.end&&(
+   need.kind==='platform-bar'?p.duck&&p.support===platforms[need.index]?.id:
+   need.kind==='platform-low'?p.bottom<=platforms[need.index].y-50:
+   (need.kind==='bar'||need.kind==='duck-gate')?p.duck&&p.support!==null:
+   need.kind==='tall'?p.bottom<=GROUND-170:
+   need.kind==='gap'?p.bottom<=GROUND-70:p.bottom<=GROUND-65));
+  if(!options.length)return null;
+  const target=options[Math.floor(options.length*.48)],wx=x+target.x;
+  if(need.kind==='gap'){
+   const width=44+speedAt(seconds+target.t)*.035;
+   gaps.push({x:wx-width/2,w:width});
+   pattern.gaps.push([target.t,width]);
+  }else{
+   const sizes={low:[32,36,GROUND-36],bar:[69,29,GROUND-64],'duck-gate':[84,GROUND-DUCK_GATE_OPENING-DUCK_GATE_TOP,DUCK_GATE_TOP],tall:[40,142,GROUND-142],
+    'platform-low':[35,28,platforms[need.index]?.y-28],
+    'platform-bar':[52,28,platforms[need.index]?.y-62]};
+   const [w,h,y]=sizes[need.kind];obstacles.push({x:wx-w/2,w,h,y,kind:need.kind,phase:0});
+   pattern.hazards.push([target.t,need.kind]);
+  }
+ }
+ const segment={type:name,theme:pattern.theme,x,length:distance(plan.duration),seconds,speed:speedAt(seconds),hazards:obstacles,gaps,
+  platforms,pads:[],pickups:[],script:plan.script,pattern,riff:0,origin:'trajectory-first',planCount:plan.count};
+ // Reuse actual game physics; do not allow a route with no certified solution.
+ if(![0,-.02,.02,-.04,.04].every(offset=>replayPattern(segment,{offset}).ok))return null;
+ // No decorative fake platforms: every created floor must actually be landed on.
+ if(platforms.length){
+  const route=replayPattern(segment,{trace:true}).route;
+  const touched=new Set(route.filter(p=>p.support&&p.support!=='ground').map(p=>p.support));
+  if(!platforms.every(p=>touched.has(p.id)))return null;
+ }
+ // Denser links must survive independent action timing changes, not only a
+ // uniform shift that unrealistically preserves every relative input gap.
+ if(seconds>=20){
+  const events=plan.script;
+  const probes=[
+   events.map((_,i)=>i%2===0?.10:-.10),
+   events.map((_,i)=>i%2===0?-.10:.10),
+   events.map((_,i)=>((Math.imul(i+17,1103515245)>>>24)/255-.5)*.20),
+   events.map((_,i)=>((Math.imul(i+47,1664525)>>>24)/255-.5)*.20)
+  ];
+  if(!probes.every(actionOffsets=>replayPattern(segment,{actionOffsets}).ok))return null;
+ }
+ return segment;
+}
+
+function composeTrajectorySegment(x,seconds,rng){
+ // Bounded retry of action plans rejected by landing, gap, and jitter checks.
+ // Remains opt-in and never delays the stable V0.6 runner.
+ for(let attempt=0;attempt<3;attempt++){
+  const candidate=composeTrajectoryAttempt(x,seconds,rng);
+  if(candidate)return candidate;
+ }
+ return null;
+}
+function makeSegment(x,seconds,rng,hp,recent={}){
+ const speed=speedAt(seconds);
+ // Genuine advanced mechanics should recur; do not bury them inside 30 motifs.
+ // Avoid three consecutive repeats, while keeping the procedural action-first
+ // route generator and the original aerial patterns for variety.
+ const specials=PATTERNS.filter(p=>p.challenge&&(p.minTime||0)<=seconds);
+ const recentSpecial=(recent.recentTypes||[]).some(name=>PATTERNS.some(p=>p.challenge&&p.name===name));
+ const chance=seconds>=55?.30:seconds>=25?.21:.08;
+ if(specials.length&&!recentSpecial&&rng()<chance){
+  const multi=seconds>=45?specials.filter(p=>p.script.length>=4):specials;
+  const choices=multi.length?multi:specials;
+  const alternate=choices.filter(p=>p.name!==recent.type);
+  const pool=alternate.length?alternate:choices;
+  const pattern=pool[Math.floor(rng()*pool.length)];
+  const segment=buildPattern(x,seconds,speed,pattern,rng,0);
+  // Preserve the V0.7 rare recovery rule in advanced routes too.
+  if(hp<3&&seconds>20&&rng()<.0025)segment.pickups.push({x:x+speed*.10,y:GROUND-24,r:13,kind:'heart'});
+  return segment;
+ }
+ // Experimental V0.7 route-first generator, with legacy motifs as safe fallback.
+ if(typeof globalThis!=='undefined'&&globalThis.CYBER_RUN_V07_EXPERIMENTAL===true&&rng()<(seconds<10?.34:.73)){
+  const composed=composeTrajectorySegment(x,seconds,rng);
+  if(composed)return composed;
+ }
+ const allowed=PATTERNS.filter(p=>(p.minTime||0)<=seconds);
+ // Recoveries appear intermittently, not repeated at random after every course.
+ // Strong anti-repetition without fixing an exact sequence; a smooth pressure curve
+ // alternates intense clusters and brief recovery beats.
+ const target=2.65+.48*Math.sin(seconds*.18);
+ const weighted=allowed.map(p=>{
+  const difficulty=p.name==='breather'?.65:p.platforms?.length?3.2:p.hazards.length>=3?3.0:2.4;
+  let weight=p.weight*Math.max(.20,1-Math.abs(target-difficulty)*.46);
+  // Beyond the opening, prioritize more decisions per second, not just speed.
+  const pressure=Math.min(1,Math.max(0,(seconds-12)/78));
+  const active=(p.script||[]).filter(action=>action[1]==='jump'||action[1]==='duck-on').length;
+  if(active>=4)weight*=1+pressure*2.0;
+  else if(active>=3)weight*=1+pressure*.9;
+  else if(active<=1&&p.name!=='breather')weight*=1-pressure*.5;
+  if(p.name===recent.type)weight*=.025;
+  if(p.theme===recent.theme)weight*=.32;
+  if((recent.recentTypes||[]).includes(p.name))weight*=.46;
+  if((recent.recentThemes||[]).includes(p.theme))weight*=.72;
+  if(p.name==='breather'&&recent.type==='breather')weight*=.1;
+  return {p,weight};
+ });
+ const total=weighted.reduce((sum,z)=>sum+z.weight,0);
+ let needle=rng()*total,pattern=allowed[allowed.length-1];
+ for(const {p,weight} of weighted){needle-=weight;if(needle<0){pattern=p;break}}
+ // Pre-certified micro-riffs keep the action grammar intact while varying actual
+ // obstacle timing. rhythm-three has less clearance and permits only safe riffs.
+ const approvedRiffs=pattern.name==='rhythm-five'?[0,2]:
+  pattern.name==='aerial-surge'?[0,1]:[0,1,2,3];
+ const riff=approvedRiffs[Math.floor(rng()*approvedRiffs.length)];
+ const segment=buildPattern(x,seconds,speed,pattern,rng,riff);
+ // Healing is deliberately rare, random, and never spawns at full HP. No score pickups.
+ if(hp<3&&seconds>20&&rng()<.0025){segment.pickups.push({x:x+speed*.10,y:GROUND-24,r:13,kind:'heart'})}
+ return segment;
+}
+return {GROUND,GRAVITY,FIRST_JUMP,SECOND_JUMP,SPRING_JUMP,BASE_SPEED,MAX_SPEED,BODY_W,STAND_H,DUCK_H,DT,MIN_SECOND_JUMP,PATTERNS,
+ speedAt,timeToTravel,trajectoryTrace,trajectoryComposition,composeTrajectorySegment,DUCK_GATE_TOP,DUCK_GATE_OPENING,FRAGILE_HOLD,AIR_BOOST_VY,randomizer,overlap,intersectsGap,rectAt,hazardAt,makeRunner,isSupported,physicsStep,buildPattern,replayPattern,verifyPattern,makeSegment,HITBOX_OFFSET_X};
+});
+</script>
+<script>/* CYBER RUN — animated neon stick runner, cosmetic only; no hitbox or game RNG changes. */
+(function(root, factory) {
+  const api=factory();
+  if(typeof module==='object'&&module.exports)module.exports=api;
+  root.CyberRunStickman=api;
+})(typeof globalThis!=='undefined'?globalThis:this,function(){
+  'use strict';
+  const TAU=Math.PI*2;
+  function point(x,y){return {x,y}}
+  function pose({time=0, phase=null, intensity=0, duck=false, supported=true, jumps=0, vy=0, boost=false}={}) {
+    // Origin is ground level under the stick figure. Crouch fits 27px.
+    if(duck && supported){
+      const bob=Math.sin(time*15)*.5;
+      const head=point(5,-20.0+bob),shoulder=point(1,-15.5+bob),hip=point(-4,-9.5);
+      return {type:'crouch',head,radius:5.2,shoulder,hip,
+        arms:[[shoulder,point(8,-13),point(14,-12)], [shoulder,point(-7,-10),point(-11,-5)]],
+        legs:[[hip,point(5,-6),point(11,-1)], [hip,point(-11,-5),point(-14,-1)]]};
+    }
+    // Integrated phase keeps the gait continuous as running speed increases.
+    // Time is a fallback for independent animation preview and test harnesses.
+    const running=supported,gaitPhase=Number.isFinite(phase)?phase:time*(19+11*Math.min(1,Math.max(0,intensity)));
+    const s=Math.sin(gaitPhase),c=Math.cos(gaitPhase);
+    const lean=running?1.3+intensity*2.5:vy<0?1:0;
+    // One foot plants while the other swings, instead of two free-spinning legs.
+    const bounce=running?(1.0+intensity)*Math.pow(Math.sin(gaitPhase),2):0;
+    const head=point(lean+1,-40+bounce),shoulder=point(lean,-30+bounce),hip=point(-1,-18+bounce);
+    let arms,legs,type;
+    if(running){
+      type='run';
+      const stride=17+intensity*5, duty=.47-intensity*.04, lift=9+intensity*4;
+      const smooth=u=>u*u*(3-2*u);
+      function foot(phaseOffset){
+        const u=((gaitPhase/6.283185307179586+phaseOffset)%1+1)%1;
+        if(u<duty)return point(stride*(.5-u/duty),-1);
+        const w=(u-duty)/(1-duty);
+        return point(stride*(-.5+smooth(w)),-1-lift*Math.sin(Math.PI*w));
+      }
+      const nearFoot=foot(0),farFoot=foot(.5);
+      const knee=(end,bend)=>point(hip.x+(end.x-hip.x)*.52+bend,-10+(end.y+1)*.22);
+      legs=[[hip,knee(nearFoot,3),nearFoot],[hip,knee(farFoot,-2),farFoot]];
+      arms=[
+        [point(shoulder.x-2,shoulder.y),point(-4-nearFoot.x*.50,-24),point(-5-nearFoot.x*.67,-18)],
+        [point(shoulder.x+2,shoulder.y),point(4-farFoot.x*.50,-24),point(6-farFoot.x*.67,-18)]
+      ];
+    }else if(boost || jumps>=2){
+      type='double';
+      arms=[[shoulder,point(-10,-35),point(-15,-40)], [shoulder,point(11,-36),point(16,-39)]];
+      legs=[[hip,point(10,-16),point(9,-8)], [hip,point(-10,-17),point(-7,-8)]];
+    }else{
+      // No one-frame pose snap at the jump apex: blend limb joints with vertical
+      // velocity while keeping the collision state and hitbox unchanged.
+      const t=Math.max(0,Math.min(1,(vy+150)/330));
+      const fallBlend=t*t*(3-2*t);
+      const interpolate=(a,b)=>point(a.x+(b.x-a.x)*fallBlend,a.y+(b.y-a.y)*fallBlend);
+      const jumpingArms=[[shoulder,point(-8,-36),point(-12,-41)], [shoulder,point(9,-36),point(13,-42)]];
+      const fallingArms=[[shoulder,point(-10,-28),point(-14,-23)], [shoulder,point(10,-28),point(15,-24)]];
+      const jumpingLegs=[[hip,point(7,-12),point(13,-7)], [hip,point(-7,-11),point(-5,-3)]];
+      const fallingLegs=[[hip,point(5,-10),point(7,0)], [hip,point(-5,-10),point(-9,0)]];
+      const blend=(a,b)=>a.map((limb,i)=>limb.map((joint,j)=>interpolate(joint,b[i][j])));
+      type=vy<90?'jump':'fall';
+      arms=blend(jumpingArms,fallingArms);
+      legs=blend(jumpingLegs,fallingLegs);
+    }
+    return {type,head,radius:6.2,shoulder,hip,arms,legs};
+  }
+  function draw(ctx, x, bottom, state={}) {
+    const p=pose(state);
+    ctx.save();ctx.translate(x+18,bottom);
+    ctx.lineCap='round';ctx.lineJoin='round';
+    const ink='#081728', neon=state.boost?'#ffef9b':'#71ffe3';
+    function limb(points,color,width){
+      ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
+      for(let i=1;i<points.length;i++)ctx.lineTo(points[i].x,points[i].y);
+      ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();
+    }
+    for(let i=0;i<2;i++){
+      limb(p.legs[i],ink,6.6);limb(p.legs[i],neon,3.2);
+      limb(p.arms[i],ink,5.6);limb(p.arms[i],i===0?'#35c8dd':neon,2.8);
+    }
+    limb([p.hip,p.shoulder],ink,7.7);limb([p.hip,p.shoulder],neon,4.1);
+    ctx.shadowColor=neon;ctx.shadowBlur=7;
+    ctx.beginPath();ctx.arc(p.head.x,p.head.y,p.radius,0,TAU);
+    ctx.fillStyle=ink;ctx.fill();ctx.strokeStyle=neon;ctx.lineWidth=3;ctx.stroke();
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#eafff8';ctx.fillRect(p.head.x+2.1,p.head.y-1,2.5,2.5);
+    ctx.fillStyle='#b9fff0';
+    for(const limbPoints of [...p.legs,...p.arms]){
+      const joint=limbPoints[1];ctx.beginPath();ctx.arc(joint.x,joint.y,1.7,0,TAU);ctx.fill();
+    }
+    ctx.restore();
+    return p;
+  }
+  return {pose,draw};
+});
+</script>
+<script>/* CYBER RUN — V2 handcrafted study course, 2026-10-23.
+ * Isolated prototype: NOT the procedural generator or Google Sites release.
+ * Coin positions are sampled from the actual 120Hz physics witness, with no scoring.
+ */
+(function(root,factory){
+ const api=factory(root.CyberRunCore||(typeof require==='function'?require('./core.js'):null));
+ if(typeof module==='object'&&module.exports)module.exports=api;
+ root.CyberRunHandcrafted=api;
+})(typeof globalThis!=='undefined'?globalThis:this,function(C){
+ 'use strict';
+ if(!C)throw Error('CYBER RUN core missing');
+ // Fixed warm-up occupies ~8.3s of obstacles after the short initial lead-in
+ // (roughly 9.7s from RUN START). Remaining motifs test learned action chains.
+ const CUSTOM=Object.freeze({'spring-pressure':{
+  name:'spring-pressure',theme:'SPRING PRESSURE',duration:3.8,weight:0,
+  script:[[1.19,'duck-on'],[1.69,'duck-off'],[2.03,'duck-on'],[2.73,'duck-off'],[2.91,'jump']],
+  pads:[[.31,46]],platforms:[[.81,1.68,110]],
+  hazards:[[.80,'tall'],[1.48,'platform-bar',0],[2.40,'duck-gate'],[3.20,'low']],gaps:[]
+ },'skyline-exit':{
+  name:'skyline-exit',theme:'SKYLINE EXIT',duration:4.5,weight:0,
+  script:[[.19,'jump'],[.89,'jump'],[2.83,'duck-on'],[3.38,'duck-off'],[3.56,'jump']],
+  platforms:[[.46,1.19,75],[1.32,2.1,142]],
+  hazards:[[.81,'low'],[1.81,'low'],[3.12,'duck-gate'],[3.90,'low']],gaps:[],pads:[]
+ },'tunnel-bridge':{
+  name:'tunnel-bridge',theme:'TUNNEL BRIDGE',duration:4.32,weight:0,
+  script:[[.13,'duck-on'],[.61,'duck-off'],[.77,'jump'],[1.57,'jump'],[2.81,'duck-on'],[3.34,'duck-off'],[3.55,'jump']],
+  platforms:[[1.04,1.65,77],[1.70,2.53,125]],
+  hazards:[[.43,'duck-gate'],[1.11,'low'],[2.24,'low'],[3.06,'duck-gate'],[3.83,'low']],gaps:[],pads:[]
+ },'relay-bridge':{
+  name:'relay-bridge',theme:'SWITCHBACK RELAY',duration:4.4,weight:0,
+  script:[[.12,'duck-on'],[.56,'duck-off'],[.72,'jump'],[1.59,'jump'],[2.67,'duck-on'],[3.16,'duck-off'],[3.36,'jump']],
+  platforms:[[1.06,1.83,77]],hazards:[[.42,'duck-gate'],[1.11,'low'],[2.24,'low'],[2.96,'duck-gate'],[3.68,'low']],gaps:[],pads:[]
+ }});
+ const DESIGN=[
+  ['GATE BEAT','reverse-switch','WARM-UP','しゃがみ → 解除 → ジャンプ'],
+  ['UPSTEP','sky-ascend','WARM-UP','着地 → 再ジャンプ → 上段へ'],
+  ['EXIT LINK','drop-and-duck','WARM-UP','下降 → 着地してしゃがむ → 跳ぶ'],
+  ['SHUTTER SWITCH','duck-weave','MOTIF A','しゃがみ解除 → ジャンプ → 必須しゃがみ',[1.82]],
+  ['TWO-STEP SKY','sky-stepduck','MOTIF B','二段足場 → 空中の高さ変化 → 着地'],
+  ['FRAGILE STEP','fracture-hop','MOTIF C','崩れる足場を踏み切る'],
+  ['RING VAULT','orb-leap','MOTIF D','空中リング → 長めの空中横断'],
+  ['SPRING PRESSURE','spring-pressure','MOTIF SPRING','バネで上段 → しゃがむ → 地上へ落下 → 必須しゃがみ → ジャンプ'],
+  ['PULSE DRONE','pulse-drone','MOTIF E','移動障害物 → 跳ぶ → 通路'],
+  ['SKYLINE EXIT','skyline-exit','CHAIN SKY','高台2段を登る → 降下 → 必須しゃがみ → 最後にジャンプ'],
+  ['FRACTURE SHUTTER','fracture-shutter','CHAIN A','崩落 → 着地後の必須しゃがみ'],
+  ['BROKEN CIRCUIT','fracture-rebound-gate','CHAIN B','崩落 → リング → 必須しゃがみ'],
+  ['SWITCHBACK RELAY','relay-bridge','CHAIN C','しゃがみ→高台着地→再跳躍→着地しゃがみ→最後の跳躍'],
+  ['TUNNEL BRIDGE','tunnel-bridge','CHAIN BRIDGE','しゃがみ→中段着地→上段着地→落下してしゃがみ→ジャンプ'],
+  ['RING TO CRAWL','orb-gate','CHAIN D','空中リング → 着地後の必須しゃがみ'],
+  ['FINAL RHYTHM','overdrive-rhythm','CHAIN E','高密度連続アクション',[1.07,3.45]]
+ ];
+ const SECTIONS=Object.freeze(DESIGN.map(([title,base,chapter,objective,gates],i)=>{
+  const source=C.PATTERNS.find(p=>p.name===base)||CUSTOM[base];
+  if(!source)throw Error('Missing pattern: '+base);
+  const pattern={...source,name:'slice-v2-'+String(i+1).padStart(2,'0')+'-'+base,
+   script:source.script.map(a=>a.slice()),
+   hazards:(source.hazards||[]).map(([at,kind,...rest])=>
+    [at,kind==='bar'&&(gates||[]).some(t=>Math.abs(t-at)<.001)?'duck-gate':kind,...rest]),
+   platforms:(source.platforms||[]).map(a=>a.slice()),
+   gaps:(source.gaps||[]).map(a=>a.slice()),pads:(source.pads||[]).map(a=>a.slice()),
+   weight:0,minTime:0,challenge:false};
+  return Object.freeze({index:i,title,base,chapter,objective,pattern});
+ }));
+ function makeGuideCoins(segment){
+  // Exact sample path as a HINT, not a guarantee of first-try success.
+  // Coin pickups intentionally carry zero score, zero HP and no currency.
+  const evidence=C.replayPattern(segment,{trace:true});
+  if(!evidence.ok)throw Error('Handcrafted section lost witnessed solution: '+segment.type+' '+evidence.reason);
+  const trace=evidence.route,coins=[];
+  // Evenly spaced WORLD positions stay readable at 400–1150 px/s.
+  // Time-only spacing used to thin out dramatically as the runner accelerated.
+  // Keep each coin aligned to the physics-verified movement path, never random.
+  const WORLD_COIN_SPACING=84;
+  let sampleIndex=0;
+  for(let ahead=70;ahead<segment.length-65;ahead+=WORLD_COIN_SPACING){
+   const target=segment.x+ahead;
+   while(sampleIndex<trace.length-1&&
+    trace[sampleIndex].worldX+C.HITBOX_OFFSET_X+C.BODY_W/2<target)sampleIndex++;
+   const sample=trace[sampleIndex];
+   if(!sample)continue;
+   const coin={id:segment.type+':coin:'+coins.length,
+    kind:'guide-coin',x:sample.worldX+C.HITBOX_OFFSET_X+C.BODY_W/2,
+    y:sample.bottom-(sample.duck?14:26),r:7,taken:false};
+   // Never hide a hazard inside an inviting guide coin.
+   const unsafe=segment.hazards.some(h=>{
+    const box=C.hazardAt(h,segment.seconds+sample.time);
+    const dx=Math.max(box.x-coin.x,0,coin.x-box.x-box.w);
+    const dy=Math.max(box.y-coin.y,0,coin.y-box.y-box.h);
+    return Math.hypot(dx,dy)<coin.r+2;
+   });
+   if(!unsafe)coins.push(coin);
+  }
+  return coins;
+ }
+ function makeSection(i,x,entrySeconds){
+  if(!Number.isInteger(i)||i<0||i>=SECTIONS.length)return null;
+  const section=SECTIONS[i];
+  const seg=C.buildPattern(x,entrySeconds,C.speedAt(entrySeconds),section.pattern,C.randomizer(1),0);
+  seg.authoredSection=i;
+  seg.authoredLabel=section.title;
+  seg.authoredObjective=section.objective;
+  seg.handcrafted=true;
+  seg.pickups.push(...makeGuideCoins(seg));
+  return seg;
+ }
+ return Object.freeze({SECTIONS,makeSection,totalSections:SECTIONS.length,title:'CIRCUIT STUDY · V2'});
+});</script>
+<script>(()=>{'use strict';
+const Stick=window.CyberRunStickman;
+const H=window.CyberRunHandcrafted;
+if(!H)throw Error('Handcrafted course data is missing');
+const C=window.CyberRunCore,canvas=document.getElementById('game'),ctx=canvas.getContext('2d',{alpha:false}),$=id=>document.getElementById(id);if(!ctx||!C||!Stick){$('message').textContent='ゲームを初期化できませんでした。';return}
+const ui={overlay:$('overlay'),msg:$('message'),start:$('primary'),score:$('score'),best:$('best'),distance:$('distance'),speed:$('speed'),hearts:$('hearts'),region:$('region'),duck:$('duck'),jump:$('jump')};
+let nextHandcraftedIndex=0,goalX=Infinity;
+let viewW=960,viewH=540,s=1,dpr=1,ground=C.GROUND,state='menu',runner=null,segments=[],hazards=[],gaps=[],platforms=[],pads=[],pickups=[],seed=0,rng=null,spawnCursor=0,elapsed=0,travel=0,invuln=0,rescue=0,nextFrame=0,lastFrame=0,gameId=0,duckHeld=false,jumpQueued=false,localBest=0,currentRegion='NEON CITY',currentTheme='GROUND FLOW',previousCourse=null,floaters=[],trail=[],hitPulse=0,effects=[],jumpFlash=0,landFlash=0,boostFlash=0,flowFlash=0,cleanFlash=0,lastClean=-100,hudAccumulator=0,lastTheme='GROUND FLOW',gaitPhase=0,cleanStreak=0,streakFlash=0;
+try{localBest=Number(localStorage.getItem('cyber-run-authored-v02-study-best'))||0}catch(_){/* storage may be blocked */}
+function resize(){
+ const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight);
+ // Give iPad-like landscape screens a wider preview window at high speed.
+ s=w/h>1.10?Math.min(h/540,w/920):h/540;viewW=w/s;viewH=h/s;dpr=Math.min(2,devicePixelRatio||1);
+ canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
+ ctx.setTransform(dpr*s,0,0,dpr*s,0,0);ctx.imageSmoothingEnabled=true;
+ // Keep the runner visible when a phone rotates mid-run. Shift all world objects
+ // with the anchored runner so collision distances do not change on resize.
+ if(runner){
+  const safeX=Math.min(Math.max(86,viewW*.19)+6,Math.max(12,viewW-40));
+  const shift=safeX-runner.x;
+  if(shift!==0){
+   runner.x=safeX;spawnCursor+=shift;if(Number.isFinite(goalX))goalX+=shift;
+   for(const list of [segments,hazards,gaps,platforms,pads,pickups,floaters])
+    for(const entity of list)entity.x+=shift;
+  }
+ }
+}
+addEventListener('resize',resize);resize();
+// Screen-only particles do not affect obstacle randomization or collision.
+// Cap count strictly for school iPad performance.
+function burst(x,y,color,count,vx,vy){
+ const seed=elapsed*47+travel*.03;
+ for(let i=0;i<count;i++){
+  const a=(i+.5)*2.399963+seed;
+  const speed=40+(i%5)*20;
+  effects.push({x,y,vx:vx+Math.cos(a)*speed,vy:vy+Math.sin(a)*speed*.65,
+   life:.28+(i%4)*.055,max:.28+(i%4)*.055,color,size:i%3===0?3.5:2});
+ }
+ if(effects.length>64)effects.splice(0,effects.length-64);
+}
+
+function makeRunner(){return C.makeRunner(Math.max(86,viewW*.19)+6)}
+function playerRect(){return C.rectAt(runner.x+C.HITBOX_OFFSET_X,runner.bottom,runner.duck)}
+function isOnGround(){return C.isSupported(runner)}
+function jump(){if(state!=='running')return;jumpQueued=true}
+function setDuck(value){if(!runner)return;duckHeld=!!value&&state==='running';runner.duck=duckHeld&&isOnGround()&&runner.jumps===0;ui.duck.classList.toggle('pressed',duckHeld)}
+function start(){nextHandcraftedIndex=0;goalX=Infinity;gameId++;seed=((Date.now()^Math.floor(performance.now()*10000))>>>0)||1;rng=C.randomizer(seed);runner=makeRunner();segments=[];hazards=[];gaps=[];platforms=[];pads=[];pickups=[];spawnCursor=runner.x+C.speedAt(0)*1.45;elapsed=0;travel=0;invuln=0;rescue=0;duckHeld=false;jumpQueued=false;previousCourse=null;state='running';floaters=[];trail=[];effects=[];jumpFlash=0;landFlash=0;boostFlash=0;flowFlash=0;lastTheme='GROUND FLOW';gaitPhase=0;cleanStreak=0;streakFlash=0;cleanFlash=0;lastClean=-100;hudAccumulator=0;hitPulse=0;ui.start.textContent='もう一回';ui.overlay.classList.add('hidden');ui.best.textContent='BEST '+localBest.toLocaleString()+' m';lastFrame=performance.now();cancelAnimationFrame(nextFrame);nextFrame=requestAnimationFrame(frame)}
+function pause(){if(state==='running'){state='paused';cancelAnimationFrame(nextFrame);nextFrame=0;ui.msg.textContent='一時停止中';ui.start.textContent='再開';ui.overlay.classList.remove('hidden');setDuck(false)}else if(state==='paused'){resume()}}
+function resume(){if(state!=='paused')return;cancelAnimationFrame(nextFrame);nextFrame=0;state='running';ui.overlay.classList.add('hidden');lastFrame=performance.now();nextFrame=requestAnimationFrame(frame)}
+ui.start.addEventListener('click',()=>state==='paused'?resume():start());$('pause').addEventListener('click',pause);
+function bind(button,down,up){button.addEventListener('pointerdown',e=>{e.preventDefault();try{button.setPointerCapture(e.pointerId)}catch(_){}button.classList.add('pressed');down()});['pointerup','pointercancel','lostpointercapture'].forEach(type=>button.addEventListener(type,e=>{e.preventDefault();button.classList.remove('pressed');if(up)up()}))}
+bind(ui.jump,jump);bind(ui.duck,()=>setDuck(true),()=>setDuck(false));
+const keys=new Set();addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();if(keys.has(e.code))return;keys.add(e.code);if(['ArrowUp','Space'].includes(e.code))jump();if(e.code==='ArrowDown')setDuck(true);if(e.code==='Escape'||e.code==='KeyP')pause()});addEventListener('keyup',e=>{keys.delete(e.code);if(e.code==='ArrowDown')setDuck(false)});addEventListener('blur',()=>{keys.clear();if(state==='running')pause()});document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='running')pause()});addEventListener('contextmenu',e=>e.preventDefault());
+function createAhead(){let guard=0;
+ while(nextHandcraftedIndex<H.totalSections&&spawnCursor<viewW+700&&guard++<10){
+  const eta=C.timeToTravel(elapsed,Math.max(0,spawnCursor-(runner.x+C.HITBOX_OFFSET_X)));
+  const segment=H.makeSection(nextHandcraftedIndex++,spawnCursor,elapsed+eta);
+  spawnCursor+=segment.length;
+  if(nextHandcraftedIndex===H.totalSections)goalX=spawnCursor;
+  const prior=previousCourse||{};
+  previousCourse={type:segment.type,theme:segment.theme,
+   recentTypes:[...(prior.recentTypes||[]),segment.type].slice(-3),
+   recentThemes:[...(prior.recentThemes||[]),segment.theme].slice(-2)};
+  segments.push(segment);hazards.push(...segment.hazards);gaps.push(...segment.gaps);pickups.push(...segment.pickups);platforms.push(...segment.platforms);pads.push(...segment.pads)}}
+function hit(){if(invuln>0||state!=='running')return;cleanStreak=0;streakFlash=0;runner.hp--;invuln=1.35;hitPulse=.32;floaters.push({x:runner.x+16,y:runner.bottom-66,t:0,text:'−1 HP',color:'#ff819d'});if(runner.hp<=0)gameOver()}
+function finishHandcrafted(){
+ if(state!=='running')return;
+ state='cleared';
+ const metres=Math.floor(travel/9);
+ if(metres>localBest){localBest=metres;try{localStorage.setItem('cyber-run-authored-v02-study-best',String(localBest))}catch(_){}}
+ ui.best.textContent='BEST '+localBest.toLocaleString()+' m';
+ ui.msg.textContent='CIRCUIT STUDY V2 CLEAR!　残りHP '+runner.hp+'/3　全'+H.totalSections+'区間突破';
+ ui.start.textContent='もう一回';ui.overlay.classList.remove('hidden');setDuck(false);
+}
+function gameOver(){state='over';const metres=Math.floor(travel/9),newRecord=metres>localBest;
+ if(newRecord){localBest=metres;try{localStorage.setItem('cyber-run-authored-v02-study-best',String(localBest))}catch(_){}}
+ ui.msg.textContent=metres.toLocaleString()+' m 走破'+(newRecord?' — NEW BEST!':'');ui.start.textContent='もう一回';ui.overlay.classList.remove('hidden');setDuck(false)}
+function step(dt){
+ for(const f of floaters){f.t+=dt;f.y-=22*dt}floaters=floaters.filter(f=>f.t<.65);
+ elapsed+=dt;hitPulse=Math.max(0,hitPulse-dt);invuln=Math.max(0,invuln-dt);rescue=Math.max(0,rescue-dt);
+ jumpFlash=Math.max(0,jumpFlash-dt);landFlash=Math.max(0,landFlash-dt);boostFlash=Math.max(0,boostFlash-dt);flowFlash=Math.max(0,flowFlash-dt);cleanFlash=Math.max(0,cleanFlash-dt);streakFlash=Math.max(0,streakFlash-dt);
+ for(const e of effects){e.x+=e.vx*dt;e.y+=e.vy*dt;e.vy+=170*dt;e.life-=dt}
+ effects=effects.filter(e=>e.life>0);
+ const speed=C.speedAt(elapsed),move=speed*dt;travel+=move;spawnCursor-=move;
+ if(Number.isFinite(goalX))goalX-=move;
+ if(runner.support!==null&&!runner.duck)gaitPhase+=(18+17*Math.min(1,(speed-C.BASE_SPEED)/(C.MAX_SPEED-C.BASE_SPEED)))*dt;
+ for(const list of [hazards,gaps,pickups,segments,platforms,pads])for(const obj of list)obj.x-=move;
+ for(const h of hazards)if(h.kind==='moving')h.y=ground-87+Math.sin(elapsed*3.5+h.phase)*27;
+ // The edge of a gap is not a damage hitbox. Physics removes ground support
+ // when the player truly runs over a hole; falling below ground costs HP.
+ // Jumping from the lip must not be punished before physics processes input.
+ // Keep the runner anchored at its screen x; world elements scroll left.
+ const previousSupport=runner.support,previousVy=runner.vy,requested=jumpQueued;
+ C.physicsStep(runner,dt,runner.x,platforms,gaps,duckHeld,jumpQueued,elapsed,rescue,pads);
+ jumpQueued=false;
+ if(previousVy>=0&&runner.vy<-800){boostFlash=.42;burst(runner.x+19,ground-6,'#ffe985',17,-55,-105)}
+ else if(requested&&runner.vy<-500&&previousVy>-800){jumpFlash=.23;burst(runner.x+18,runner.bottom-3,'#66ffdd',8,-55,5)}
+ if(previousSupport===null&&runner.support!==null&&previousVy>100){landFlash=.21;burst(runner.x+20,runner.bottom,'#94d9ff',10,-75,-42)}
+ if(runner.bottom>ground+112){hit();runner.bottom=ground;runner.vy=0;runner.jumps=0;runner.support='ground';rescue=1.0;invuln=Math.max(invuln,1.4)}
+ const body=playerRect();
+ // Signal an especially tight clean pass with a small cosmetic burst.
+ // This never changes distance scoring, collisions or procedural RNG.
+ for(const h of hazards){
+  const collider=C.hazardAt(h,elapsed);
+  if(body.x<h.x+h.w&&body.x+body.w>h.x){
+   const separation=Math.max(collider.y-(body.y+body.h),body.y-(collider.y+collider.h),0);
+   if(!C.overlap(body,collider))h.closestClearance=Math.min(h.closestClearance??Infinity,separation);
+  }
+  if(!h._cleared&&h.x+h.w<body.x){
+   h._cleared=true;
+   // A clean-avoid streak is feedback, never score or a gameplay multiplier.
+   if(!h._contacted&&invuln<=0){
+    cleanStreak++;
+    if(cleanStreak>=3&&cleanStreak%3===0){
+     streakFlash=.70;
+     burst(body.x+8,body.y+5,'#adfff0',7,-70,-10);
+    }
+   }
+   if(invuln<=0&&Number.isFinite(h.closestClearance)&&h.closestClearance<=24&&elapsed-lastClean>.36){
+    cleanFlash=.19;lastClean=elapsed;
+    burst(body.x-5,body.y+body.h*.5,'#8ff5fa',5,-115,-6);
+   }
+  }
+  if(C.overlap(body,collider)){h._contacted=true;hit();break}
+ }
+ for(const item of pickups){if(item.taken)continue;const midx=body.x+body.w/2,midy=body.y+body.h/2;
+  if(Math.hypot(item.x-midx,item.y-midy)<item.r+17){
+   item.taken=true;
+   if(item.kind==='guide-coin'){burst(item.x,item.y,'#f9cc69',3,-25,-12);continue}
+   runner.hp=Math.min(3,runner.hp+1);
+   floaters.push({x:item.x,y:item.y,t:0,text:'HP +1',color:'#ff819d'});
+  }}
+ hazards=hazards.filter(h=>h.x+h.w>-40);gaps=gaps.filter(g=>g.x+g.w>-40);pickups=pickups.filter(item=>!item.taken&&item.x>-40);
+ platforms=platforms.filter(p=>p.x+p.w>-40);pads=pads.filter(p=>p.x+p.w>-40);segments=segments.filter(a=>a.x+a.length>-40);
+ createAhead();if(Number.isFinite(goalX)&&goalX<=runner.x+C.HITBOX_OFFSET_X&&state==='running')finishHandcrafted();currentRegion=elapsed<22?'NEON CITY':elapsed<48?'MACHINE DISTRICT':'ENERGY TUNNEL';
+ const upcoming=segments.find(a=>a.x+a.length>runner.x+C.HITBOX_OFFSET_X);
+ if(upcoming){currentTheme=upcoming.authoredLabel||upcoming.theme;
+  currentRegion='CIRCUIT '+String((upcoming.authoredSection||0)+1).padStart(2,'0')+'/'+H.totalSections;
+  if(currentTheme!==lastTheme){flowFlash=.60;lastTheme=currentTheme}}
+ // Throttle HUD DOM writes to 20Hz; keep physics at 120Hz.
+ hudAccumulator+=dt;
+ if(hudAccumulator>=.05||state!=='running'){
+  hudAccumulator=0;
+  ui.region.textContent=currentRegion;ui.score.textContent=Math.floor(travel/9).toLocaleString()+' m';ui.hearts.textContent='♥ '.repeat(runner.hp)+'♡ '.repeat(3-runner.hp);
+  ui.speed.textContent=(speed/C.BASE_SPEED).toFixed(1)+'×';ui.distance.textContent=currentTheme;
+ }
+}
+function draw(){
+ const W=viewW,H=viewH,t=travel,velocity=C.speedAt(elapsed),intensity=Math.min(1,(velocity-C.BASE_SPEED)/(C.MAX_SPEED-C.BASE_SPEED)),colors=currentRegion==='MACHINE DISTRICT'?['#070b1d','#253354','#ff8db0']:currentRegion==='ENERGY TUNNEL'?['#0d0b26','#3c1f5c','#bd96ff']:['#081028','#16405b','#55d7fa'];
+ const back=ctx.createLinearGradient(0,0,0,H);back.addColorStop(0,colors[0]);back.addColorStop(.85,colors[1]);back.addColorStop(1,'#0a2638');ctx.fillStyle=back;ctx.fillRect(0,0,W,H);
+ // Tablet camera offset changes drawing only; game physics stays in world coordinates.
+ const cameraY=Math.max(0,Math.min(120,(H-540)*.56));
+ ctx.save();ctx.globalAlpha=.12;const beaconX=W*.77,beaconY=Math.max(115,185-cameraY*.65);
+ ctx.strokeStyle=colors[2];ctx.lineWidth=2;
+ for(const radius of [48,65,82]){ctx.beginPath();ctx.arc(beaconX,beaconY,radius,0,Math.PI*2);ctx.stroke()}
+ ctx.globalAlpha=.07;ctx.fillStyle=colors[2];ctx.beginPath();ctx.arc(beaconX,beaconY,47,0,Math.PI*2);ctx.fill();ctx.restore();
+ ctx.save();ctx.translate(0,cameraY);
+ // Distant neon skyline, looping by camera travel. All geometry is draw-only.
+ ctx.save();ctx.globalAlpha=.55;
+ for(let layer=0;layer<2;layer++){
+  const pace=layer===0?.12:.26;
+  for(let i=0;i<24;i++){
+   const spacing=110,x=((i*spacing-t*pace)%(W+220)+(W+220))%(W+220)-100;
+   const tall=(layer===0?60:90)+(i*79%(layer===0?155:185));
+   const width=70+(i*31%25);
+   ctx.fillStyle=layer===0?'#111a3e':'#203a62';ctx.fillRect(x,ground-tall,width,tall);
+   ctx.fillStyle=layer===0?'#5463a8':colors[2];
+   for(let j=0;j<5;j++)ctx.fillRect(x+12,ground-tall+13+j*23,13,3);
+   ctx.fillStyle=colors[2];ctx.globalAlpha=layer===0?.14:.26;ctx.fillRect(x+width-2,ground-tall,2,tall);ctx.globalAlpha=.55;
+  }
+ }
+ ctx.restore();
+ // Parallax transit trails: stronger at higher speed without hiding the obstacles.
+ ctx.save();ctx.lineWidth=1.2;
+ for(let i=0;i<14+Math.floor(intensity*23);i++){
+  const x=((i*113.7-t*(.43+i%3*.13))%(W+250)+(W+250))%(W+250)-130;
+  const y=105+(i*59%220);const len=(18+intensity*135)*(i%4===0?1.35:.75);
+  ctx.strokeStyle=i%3===0?'rgba(246,133,207,.14)':'rgba(102,237,255,.15)';
+  ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+len,y);ctx.stroke();
+ }
+ ctx.restore();
+ // Ground and beat markers.
+ ctx.fillStyle='#162b41';ctx.fillRect(0,ground,W,H-ground);
+ ctx.fillStyle=colors[2];ctx.fillRect(0,ground,W,4);
+ ctx.fillStyle='#52cbe480';for(let i=0;i<24;i++){
+  const x=((i*95-t*1.48)%(W+200)+(W+200))%(W+200)-100;
+  ctx.fillRect(x,ground+24+(i%4)*23,24+intensity*65,2);
+ }
+ // Street-light flashes at sprint speed create rhythmic flow cues.
+ if(intensity>.35){ctx.fillStyle='rgba(115,247,255,.045)';for(let i=0;i<8;i++){
+  const x=((i*257-t*.93)%(W+250)+(W+250))%(W+250)-120;
+  ctx.fillRect(x,ground-145,3,140);}}
+
+ // Horizon scanner: preview REAL obstacle silhouettes rather than telling the
+ // player a button sequence. A high-speed runner can otherwise see too little ahead.
+ if(intensity>.30&&runner&&W>=560){
+  const x0=W*.34,span=W*.32,lineY=ground+51,maxFuture=1.5;
+  const origin=runner.x+C.HITBOX_OFFSET_X+C.BODY_W;
+  const upcoming=[...hazards.map(h=>({x:h.x+h.w/2,kind:h.kind})),...gaps.map(g=>({x:g.x+g.w/2,kind:'gap'})),
+   ...pads.filter(p=>p.kind==='airboost').map(p=>({x:p.x+p.w/2,kind:'airboost'})),
+   ...platforms.filter(p=>p.kind==='fragile').map(p=>({x:p.x+p.w/2,kind:'fragile'}))]
+   .map(h=>({...h,lead:C.timeToTravel(elapsed,Math.max(0,h.x-origin))}))
+   .filter(h=>h.lead>.32&&h.lead<maxFuture).sort((a,b)=>a.lead-b.lead).slice(0,5);
+  ctx.save();ctx.globalAlpha=.42;ctx.strokeStyle='#4be4da';ctx.lineWidth=1.3;
+  ctx.beginPath();ctx.moveTo(x0,lineY);ctx.lineTo(x0+span,lineY);ctx.stroke();
+  ctx.fillStyle='#a6e6e9';ctx.font='10px system-ui';ctx.textAlign='left';ctx.fillText('SCAN',x0,lineY-13);
+  ctx.globalAlpha=.82;
+  for(const h of upcoming){
+   const x=x0+span*h.lead/maxFuture;
+   if(h.kind==='airboost'){
+    ctx.strokeStyle='#79ffe4';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,lineY-5,6,0,Math.PI*2);ctx.stroke();
+   }else if(h.kind==='fragile'){
+    ctx.fillStyle='#ffb477';ctx.fillRect(x-8,lineY-6,16,3);
+    ctx.fillStyle='#ffe6a1';ctx.fillRect(x,lineY-4,2,5);
+   }else if(h.kind==='duck-gate'){
+    ctx.fillStyle='#f196f5';ctx.fillRect(x-5,lineY-12,10,9);
+    ctx.fillStyle='#86ffe0';ctx.fillRect(x-5,lineY-1,10,2);
+   }else if(h.kind==='gap'){
+    ctx.fillStyle='#ff839e';ctx.fillRect(x-7,lineY-1,5,3);ctx.fillRect(x+2,lineY-1,5,3);
+   }else if(h.kind==='bar'||h.kind==='platform-bar'){
+    ctx.fillStyle='#f38cdd';ctx.fillRect(x-5,lineY-10,10,4);
+   }else if(h.kind==='moving'){
+    ctx.fillStyle='#ffb477';ctx.fillRect(x-4,lineY-8,8,8);
+   }else{
+    ctx.fillStyle='#ffb477';ctx.fillRect(x-5,lineY-7,10,7);
+   }
+  }
+  ctx.restore();
+ }
+
+ for(const g of gaps){ctx.fillStyle='#050a19';ctx.fillRect(g.x,ground-1,g.w,H-ground+2);ctx.fillStyle='#f77c9c';ctx.fillRect(g.x-4,ground-2,4,15);ctx.fillRect(g.x+g.w,ground-2,4,15)}
+ // Platforms draw behind obstacles. They only collide with the player on descent.
+ for(const pad of pads){
+  ctx.save();
+  if(pad.kind==='airboost'){
+   // The full hitbox is visible: a cyan jump ring suspended in the air.
+   const used=!!runner?.airBoosts?.[pad.id],cx=pad.x+pad.w/2,cy=pad.y+(pad.h||34)/2;
+   ctx.globalAlpha=used?.25:1;ctx.shadowBlur=18;ctx.shadowColor='#7effe5';
+   ctx.strokeStyle=used?'#698b86':'#7effe5';ctx.lineWidth=5;
+   ctx.beginPath();ctx.ellipse(cx,cy,pad.w/2-4,(pad.h||34)/2-2,0,0,Math.PI*2);ctx.stroke();
+   ctx.fillStyle='#d7fff4';ctx.font='bold 15px system-ui';ctx.textAlign='center';
+   ctx.fillText('↑',cx,cy+6);
+  }else{
+   ctx.shadowBlur=14;ctx.shadowColor='#ffe36d';
+   ctx.fillStyle='#a47729';ctx.fillRect(pad.x,ground-10,pad.w,10);
+   ctx.fillStyle='#ffe06a';ctx.fillRect(pad.x,ground-13,pad.w,6);
+   ctx.fillStyle='#fff1ba';for(let i=5;i<pad.w-4;i+=11)ctx.fillRect(pad.x+i,ground-11,5,3);
+  }
+  ctx.restore();
+ }
+ for(const p of platforms){
+  ctx.save();
+  if(p.kind==='fragile'){
+   const touched=runner?.fragileTimes?.[p.id],remaining=touched===undefined?1:Math.max(0,1-(elapsed-touched)/C.FRAGILE_HOLD);
+   ctx.globalAlpha=touched===undefined?1:Math.max(.22,remaining);
+   ctx.shadowBlur=11;ctx.shadowColor='#ff9f6b';
+   ctx.fillStyle='#6a4039';ctx.fillRect(p.x,p.y,p.w,11);
+   ctx.fillStyle='#ffb36e';ctx.fillRect(p.x,p.y,p.w,4);
+   ctx.strokeStyle='#ffe4a3';ctx.lineWidth=2;ctx.beginPath();
+   for(let k=15;k<p.w-10;k+=27){ctx.moveTo(p.x+k,p.y+3);ctx.lineTo(p.x+k+7,p.y+9);ctx.lineTo(p.x+k+15,p.y+4)}
+   ctx.stroke();
+   ctx.globalAlpha=1;
+  }else{
+   ctx.shadowBlur=11;ctx.shadowColor='#ae8eff';ctx.fillStyle='#4b477f';ctx.fillRect(p.x,p.y,p.w,11);
+   ctx.fillStyle='#d5adff';ctx.fillRect(p.x,p.y,p.w,4);
+   ctx.fillStyle='#8974e0';for(let k=13;k<p.w-7;k+=24)ctx.fillRect(p.x+k,p.y+5,12,2);
+  }
+  ctx.restore();
+ }
+ // Distinct obstacle silhouettes with their complete collision rectangle visible.
+ for(const h of hazards){
+  if(h.x+h.w<0||h.x>W+100)continue;
+  ctx.save();ctx.shadowBlur=7;
+  if(h.kind==='duck-gate'){
+   // FULL silhouette = FULL collision region, no invisible overhead wall.
+   // The ground-level opening is deliberately large enough for crouching only.
+   ctx.shadowColor='#f079ff';ctx.shadowBlur=12;
+   ctx.fillStyle='#39254e';ctx.fillRect(h.x,h.y,h.w,h.h);
+   ctx.fillStyle='#693b83';ctx.fillRect(h.x+7,h.y+6,h.w-14,h.h-14);
+   ctx.fillStyle='#c581e6';ctx.fillRect(h.x,h.y,h.w,6);
+   for(let k=h.y+15;k<h.y+h.h-17;k+=26){
+    ctx.fillStyle='#b67bce66';ctx.fillRect(h.x+11,k,h.w-22,2);
+   }
+   ctx.fillStyle='#f2a4fc';ctx.fillRect(h.x,h.y+h.h-8,h.w,8);
+   ctx.shadowBlur=0;
+   // Only the cyan-lit low opening is safe; never draw an apparent top shortcut.
+   ctx.strokeStyle='#81ffe5';ctx.lineWidth=3;ctx.beginPath();
+   ctx.moveTo(h.x,h.y+h.h+3);ctx.lineTo(h.x+h.w,h.y+h.h+3);ctx.stroke();
+   ctx.fillStyle='#bbffe6';ctx.font='bold 12px system-ui';ctx.textAlign='center';
+   ctx.fillText('↓',h.x+h.w/2,h.y+h.h-15);
+  }else if(h.kind==='bar'||h.kind==='platform-bar'){
+   ctx.shadowColor='#f75fbf';ctx.fillStyle='#a92d86';ctx.fillRect(h.x,h.y,h.w,h.h);
+   ctx.fillStyle='#ff99dc';ctx.fillRect(h.x+2,h.y+1,h.w-4,5);
+   ctx.fillStyle='#fbe1fb';for(let k=9;k<h.w-4;k+=18)ctx.fillRect(h.x+k,h.y+11,8,3);
+   ctx.fillStyle='#fb76c4';ctx.fillRect(h.x,h.y+h.h-5,h.w,5);
+   ctx.strokeStyle='#f8a0db';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(h.x+6,h.y+h.h-8);ctx.lineTo(h.x+h.w-6,h.y+h.h-8);ctx.stroke();
+  }else if(h.kind==='moving'){
+   ctx.strokeStyle='#994d68';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(h.x+h.w/2,0);ctx.lineTo(h.x+h.w/2,h.y);ctx.stroke();
+   ctx.fillStyle='#ef526c';ctx.fillRect(h.x,h.y,h.w,h.h);
+   ctx.fillStyle='#ffb27f';ctx.fillRect(h.x+5,h.y+4,h.w-10,h.h-8);
+   ctx.fillStyle='#7a1f51';ctx.fillRect(h.x+12,h.y+10,10,8);
+  }else if(h.kind==='tall'){
+   ctx.shadowColor='#fe557f';ctx.fillStyle='#a13a70';ctx.fillRect(h.x,h.y,h.w,h.h);
+   ctx.fillStyle='#ff829f';ctx.fillRect(h.x,h.y,h.w,9);
+   ctx.fillStyle='#ffcc97';for(let k=22;k<h.h-8;k+=22)ctx.fillRect(h.x+7,h.y+k,h.w-14,5);
+   ctx.fillStyle='#501c4f';ctx.fillRect(h.x+12,h.y+12,h.w-24,h.h-25);
+   ctx.fillStyle='#ffbda6';ctx.fillRect(h.x+18,h.y+18,h.w-36,h.h-38);
+  }else{
+   ctx.shadowColor='#ff8c5d';ctx.fillStyle='#bc4b51';ctx.fillRect(h.x,h.y,h.w,h.h);
+   ctx.fillStyle='#ffb066';ctx.fillRect(h.x+3,h.y+3,h.w-6,10);
+   ctx.fillStyle='#fce5a5';for(let i=0;i<3;i++){
+    const lx=h.x+2+i*(h.w-4)/3,rx=h.x+2+(i+1)*(h.w-4)/3;
+    ctx.beginPath();ctx.moveTo(lx,h.y+12);ctx.lineTo((lx+rx)/2,h.y+3);ctx.lineTo(rx,h.y+12);ctx.fill();
+   }
+   ctx.fillStyle='#61274c';ctx.fillRect(h.x+5,h.y+23,h.w-10,7);
+  }
+  ctx.restore();
+ }
+ // Finite authored goal; this route has a start and an actual finish.
+ if(Number.isFinite(goalX)&&goalX>-25&&goalX<viewW+90){
+  ctx.save();ctx.shadowColor='#7fffe9';ctx.shadowBlur=24;
+  ctx.fillStyle='#c7fff3';ctx.fillRect(goalX,35,5,ground-25);
+  ctx.fillStyle='#062c37';ctx.fillRect(goalX-57,ground-144,115,35);
+  ctx.strokeStyle='#aaffea';ctx.lineWidth=3;ctx.strokeRect(goalX-57,ground-144,115,35);
+  ctx.fillStyle='#bffff4';ctx.font='bold 19px system-ui';ctx.textAlign='center';ctx.fillText('GOAL',goalX,ground-120);
+  ctx.restore();
+ }
+ // Short, bounded cosmetic effects; do not change course RNG or scoring.
+ for(const e of effects){ctx.save();ctx.globalAlpha=Math.max(0,e.life/e.max)*.85;ctx.fillStyle=e.color;
+  ctx.fillRect(e.x-e.size/2,e.y-e.size/2,e.size,e.size);ctx.restore()}
+ for(const item of pickups){
+  ctx.save();
+  if(item.kind==='guide-coin'){
+   // Guide-only collectible: deliberately no distance, HP or ranking change.
+   ctx.shadowColor='#f2c963';ctx.shadowBlur=5;ctx.strokeStyle='#fff0a0';ctx.lineWidth=2;
+   ctx.fillStyle='#d7a638';ctx.beginPath();ctx.ellipse(item.x,item.y,item.r*.78,item.r,0,0,2*Math.PI);ctx.fill();ctx.stroke();
+   ctx.strokeStyle='#fff2b5';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(item.x,item.y-item.r*.52);ctx.lineTo(item.x,item.y+item.r*.52);ctx.stroke();
+  }else{
+   ctx.shadowColor='#ff70ae';ctx.shadowBlur=12;ctx.fillStyle='#ff709a';
+   ctx.beginPath();ctx.arc(item.x,item.y,item.r,0,2*Math.PI);ctx.fill();ctx.fillStyle='#fff';
+   ctx.fillRect(item.x-2,item.y-7,4,14);ctx.fillRect(item.x-7,item.y-2,14,4);
+  }
+  ctx.restore();
+ }
+ if(runner){
+  const crouching=runner.duck&&runner.jumps===0,airborne=runner.support===null;
+  const x=runner.x,bottom=runner.bottom;
+  ctx.save();ctx.globalAlpha=invuln>0&&Math.floor(invuln*12)%2===0?.40:1;
+  // Character animation is cosmetic: no influence on collision or physics.
+  const compression=Math.min(1,landFlash/.21),stretch=Math.min(1,jumpFlash/.23);
+  const scaleX=1+compression*.12-stretch*.045,scaleY=1-compression*.13+stretch*.09;
+  ctx.translate(x+18,bottom);ctx.scale(scaleX,scaleY);ctx.translate(-x-18,-bottom);
+  for(let k=1;k<=3+Math.floor(intensity*3);k++){
+   ctx.fillStyle=k%2===0?'#2ec9d578':'#92ffe055';
+   ctx.fillRect(x-k*(13+intensity*5),bottom-(crouching?11:20)+k*1.5,11+intensity*10,2);
+  }
+  if(boostFlash>0){ctx.strokeStyle='#ffe47f';ctx.lineWidth=2.5;
+   ctx.beginPath();ctx.arc(x+18,bottom-25,24+boostFlash*20,0,Math.PI*2);ctx.stroke()}
+  if(!airborne){ctx.fillStyle=landFlash>0?'#c7ffea88':'#2bd5b844';
+   ctx.fillRect(x+3,bottom-2,31+landFlash*60,3)}
+  Stick.draw(ctx,x,bottom,{time:elapsed,phase:gaitPhase,intensity,duck:crouching,supported:!airborne,
+   jumps:runner.jumps,vy:runner.vy,boost:boostFlash>0});
+  if(jumpFlash>0){ctx.fillStyle='#b4fff4';ctx.fillRect(x-8,bottom-5,8+jumpFlash*27,3)}
+  ctx.restore();
+ }
+ if(flowFlash>0){
+  const alpha=Math.min(.24,flowFlash*.40);
+  ctx.save();ctx.globalAlpha=alpha;ctx.fillStyle='#95eaff';ctx.font='900 27px system-ui';
+  ctx.textAlign='right';ctx.fillText(currentTheme,W-26,ground-136);ctx.restore();
+ }
+ for(const f of floaters){ctx.save();ctx.globalAlpha=Math.max(0,1-f.t/.65);ctx.fillStyle=f.color;ctx.font='bold 16px system-ui';ctx.textAlign='center';ctx.fillText(f.text,f.x,f.y);ctx.restore()}
+ ctx.restore();
+ // Brief readable celebration above the runner, outside the HUD. Distance-only scoring remains intact.
+ if(runner&&streakFlash>0&&cleanStreak>=3){
+  ctx.save();ctx.globalAlpha=Math.min(1,streakFlash/.26)*.9;
+  ctx.textAlign='right';ctx.font='bold 16px system-ui';ctx.fillStyle='#b4fff2';
+  ctx.fillText('FLOW ×'+cleanStreak,runner.x+14,runner.bottom+cameraY-89);
+  ctx.restore();
+ }
+ if(hitPulse>0){ctx.fillStyle='rgba(255,64,107,'+(hitPulse*.28)+')';ctx.fillRect(0,0,W,H)}
+ if(cleanFlash>0){ctx.save();ctx.globalAlpha=cleanFlash*.32;ctx.strokeStyle='#62ecff';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(2,ground+cameraY-12);ctx.lineTo(2+(1-cleanFlash/.19)*75,ground+cameraY-12);ctx.stroke();ctx.restore()}
+}
+function frame(now){if(state!=='running')return;let dt=Math.min(.05,Math.max(0,(now-lastFrame)/1000));lastFrame=now; // substeps prevent tunneling at higher speed or low FPS
+ while(dt>0&&state==='running'){const sub=Math.min(1/120,dt);step(sub);dt-=sub}draw();if(state==='running')nextFrame=requestAnimationFrame(frame)}
+ draw();ui.best.textContent='BEST '+localBest.toLocaleString()+' m';
+})();
+</script>

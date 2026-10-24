@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#070d20">
+<title>CYBER RUN V0.13 | 水色リングの操作とコイン軌道改善</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game" aria-label="CYBER RUN game"></canvas>
+<header id="hud" aria-live="off">
+  <div class="metric"><span>DISTANCE</span><strong id="score">0</strong><small id="best">BEST 0 m</small></div>
+  <div class="center-hud"><div id="hearts">♥ ♥ ♥</div><div id="region">NEON CITY</div></div>
+  <div class="metric right"><span>SPEED</span><strong id="speed">1.0×</strong><small id="distance">GROUND FLOW</small></div>
+</header>
+<div id="controls"><button id="duck" class="control duck" aria-label="しゃがむ">しゃがむ</button><button id="jump" class="control jump" aria-label="ジャンプ">ジャンプ</button></div>
+<button id="pause" aria-label="一時停止">Ⅱ</button>
+<div id="overlay" role="dialog" aria-modal="true"><section id="panel">
+  <div class="eyebrow">INFINITE RUN / HANDCRAFTED CHAINS</div>
+  <h1>CYBER <em>RUN</em></h1>
+  <p id="message">最初の約10秒は指ならし。以降は手作り地形を組み合わせて無限に続く！　奥に行くほど連続操作が激しくなる。コインは道標（得点なし）。</p>
+  <p class="hint">ジャンプ：右ボタンを2回までタップ<br>しゃがみ：左ボタンを長押し<br>水色リング：触れると自動ジャンプ！ 紫の「↑ TAP」が押す場所。TWIN HALOは最初の1回だけジャンプでOK。<br>キーボード：↑ / Space、↓</p>
+  <button id="primary">RUN START</button>
+  <div class="sub">無限ラン試遊版 ／ 距離だけが記録 ／ 奥ほど高難度 ／ ランキングは未接続</div>
+</section></div>
+<script src="core.js"></script><script src="stickman.js"></script><script src="handcrafted-level-v2.js"></script><script src="extra-motifs-v1.js"></script><script src="infinite-level-v1.js"></script><script src="game-infinite-v1.js"></script>
+</body></html>

@@ -1,0 +1,95 @@
+name: CYBER RUN V2 Browser Smoke
+on:
+  pull_request:
+    paths:
+      - 'tools/browser-handcrafted-v2.cjs'
+      - 'tools/browser-handcrafted-v2-fullrun.cjs'
+      - 'tools/browser-google-sites-draft-v22.cjs'
+      - 'tools/browser-pages-v23.cjs'
+      - 'tools/browser-infinite-v1.cjs'
+      - 'tools/browser-pages-v24.cjs'
+      - 'tools/browser-pages-v25.cjs'
+      - 'tools/browser-pages-v26.cjs'
+      - 'tools/browser-pages-v27.cjs'
+      - 'tools/browser-pages-v28.cjs'
+      - 'extra-motifs-v1.js'
+      - 'infinite-playtest-v1.html'
+      - 'game-infinite-v1.js'
+      - 'infinite-level-v1.js'
+      - 'cyber-run-v22-google-sites-draft.html'
+      - 'handcrafted-level-v2.js'
+      - 'game-handcrafted-v2.js'
+      - 'handcrafted-playtest-v2.html'
+      - '.github/workflows/handcrafted-browser-v2.yml'
+  push:
+    branches:
+      - dev/handcrafted-circuit-01-20261023
+    paths:
+      - 'tools/browser-handcrafted-v2.cjs'
+      - 'tools/browser-handcrafted-v2-fullrun.cjs'
+      - 'tools/browser-google-sites-draft-v22.cjs'
+      - 'tools/browser-pages-v23.cjs'
+      - 'tools/browser-infinite-v1.cjs'
+      - 'tools/browser-pages-v24.cjs'
+      - 'tools/browser-pages-v25.cjs'
+      - 'tools/browser-pages-v26.cjs'
+      - 'tools/browser-pages-v27.cjs'
+      - 'tools/browser-pages-v28.cjs'
+      - 'extra-motifs-v1.js'
+      - 'infinite-playtest-v1.html'
+      - 'game-infinite-v1.js'
+      - 'infinite-level-v1.js'
+      - 'cyber-run-v22-google-sites-draft.html'
+      - 'handcrafted-level-v2.js'
+      - 'game-handcrafted-v2.js'
+      - 'handcrafted-playtest-v2.html'
+      - '.github/workflows/handcrafted-browser-v2.yml'
+  workflow_dispatch:
+jobs:
+  chromium-v2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Headless Chromium playtest smoke
+        run: node --test tools/browser-handcrafted-v2.cjs
+      - name: Full-length scripted run in real Chromium
+        run: node --test tools/browser-handcrafted-v2-fullrun.cjs
+      - name: Run direct-code standalone embed from start through clear and retry
+        run: node --test tools/browser-google-sites-draft-v22.cjs
+      - name: Read real GitHub Pages source from main without changing source branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: _preview_main
+      - name: Stage exact main-branch preview for isolated browser test
+        run: |
+          mkdir -p playtest-v23
+          cp _preview_main/playtest-v23/index.html playtest-v23/index.html
+          mkdir -p playtest-v24
+          cp _preview_main/playtest-v24/index.html playtest-v24/index.html
+          mkdir -p playtest-v25
+          cp _preview_main/playtest-v25/index.html playtest-v25/index.html
+          mkdir -p playtest-v26
+          cp _preview_main/playtest-v26/index.html playtest-v26/index.html
+          mkdir -p playtest-v27
+          cp _preview_main/playtest-v27/index.html playtest-v27/index.html
+          mkdir -p playtest-v28
+          cp _preview_main/playtest-v28/index.html playtest-v28/index.html
+      - name: Full V2.3 GitHub Pages artifact smoke (main source)
+        run: node --test tools/browser-pages-v23.cjs
+      - name: Real Chromium continuous infinite 220-second authored-run check
+        run: node --test tools/browser-infinite-v1.cjs
+      - name: Verify exact main-branch V0.9 infinite Pages source for 220 seconds
+        run: node --test tools/browser-pages-v24.cjs
+      - name: Verify V0.10 expanded-motifs GitHub Pages source for 220 seconds
+        run: node --test tools/browser-pages-v25.cjs
+      - name: Verify V0.11 long-run diversity Pages source for 220 seconds
+        run: node --test tools/browser-pages-v26.cjs
+      - name: Verify V0.12 cyan rebound rings Pages source for 220 seconds
+        run: node --test tools/browser-pages-v27.cjs
+      - name: Verify V0.13 cyan ring one-TAP auto-chain Pages source for 220 seconds
+        run: node --test tools/browser-pages-v28.cjs

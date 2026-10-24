@@ -111,6 +111,23 @@
    segment.authoredSection=index;
    segment.authoredLabel=index<H.totalSections?H.SECTIONS[index].title:EXTRA.SECTIONS[index-H.totalSections].title;
    segment.infinite=true;
+   // Rings trigger automatically ON CONTACT. Explicitly mark any required
+   // manual jumps on the same physics-witnessed coin route. The cue x
+   // represents the runner location at the scripted input time; it scrolls
+   // with the section. Do not suggest tapping when a ring itself activates.
+   if(segment.pads.some(p=>p.kind==='airboost')){
+    const initial=C.speedAt(seconds),timeToCap=(C.MAX_SPEED-initial)/7.5;
+    const atDistance=t=>{
+     const rise=Math.min(t,Math.max(0,timeToCap));
+     return initial*rise+3.75*rise*rise+C.MAX_SPEED*Math.max(0,t-rise);
+    };
+    segment.jumpCues=segment.script.filter(([,action])=>action==='jump').map(([at])=>{
+     const offset=atDistance(at),desiredX=segment.x+offset;
+     const closest=segment.pickups.reduce((best,p)=>
+      !best||Math.abs(p.x-desiredX)<Math.abs(best.x-desiredX)?p:best,null);
+     return {offset,y:Math.min(C.GROUND-66,Math.max(78,(closest?.y??C.GROUND-26)-44))};
+    });
+   }
    // The only randomized non-score collectible is a rare accessible heart,
    // never a required route waypoint or a groundless trap.
    if(hp<3&&seconds>30&&heartRng()<.0035){

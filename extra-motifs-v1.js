@@ -25,13 +25,13 @@
     hazards:[[.80,'tall'],[2.67,'duck-gate'],[3.40,'low']]}
   },
   {
-   title:'TWIN HALO',chapter:'LATE',objective:'1つ目の空中リング→2段ジャンプ→2つ目のリング→長い穴を越え→しゃがむ',
+   title:'TWIN HALO',chapter:'LATE',objective:'最初に1回ジャンプ→水色リング2つを順番に自動バウンド→長い穴を越える→しゃがむ',
    pattern:{name:'extra-twin-halo',theme:'DOUBLE REBOUND',duration:4.20,
-    script:[[.17,'jump'],[1.10,'jump'],[3.08,'duck-on'],[3.70,'duck-off']],
-    // The larger, visibly oval rings keep both rebound actions necessary,
-    // while allowing a realistic thumb-response window on fast iPad runs.
-    pads:[[.80,100,90,'airboost',64],[1.95,140,200,'airboost',85]],
-    gaps:[[1.45,2.275,'seconds']],hazards:[[3.43,'duck-gate']],platforms:[]}
+    // The gold trail follows a single manual takeoff and two automatic
+    // rebound contacts. No secret mid-air tap above the visible screen.
+    script:[[.17,'jump'],[3.08,'duck-on'],[3.70,'duck-off']],
+    pads:[[.80,100,80,'airboost',64],[1.75,140,55,'airboost',70]],
+    gaps:[[1.775,1.55,'seconds']],hazards:[[3.43,'duck-gate']],platforms:[]}
   },
   {
    title:'SHATTER RELAY',chapter:'LATE',objective:'しゃがみゲート→崩れる上段へ2連ジャンプ→降下直後にしゃがみ→再跳躍',
